@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Haisa Dev</string>
+    <string name="module_store_title">Module Store</string>
+    <string name="terminal_title">Terminal</string>
+    <string name="install">Install</string>
+    <string name="manage">Manage</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_terminal">Terminal</string>
+    <string name="action_settings">Settings</string>
+</resources>

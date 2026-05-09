@@ -1,196 +1,118 @@
-name: Build & Release Haisa Dev Modules
+name: Build & Test Haisa Dev
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'modules/**'
-      - '.github/workflows/**'
+    branches: [ main, dev ]
   pull_request:
     branches: [ main ]
-    paths:
-      - 'modules/**'
   workflow_dispatch:
-    inputs:
-      module_name:
-        description: '要构建的模块 (留空构建全部)'
-        required: false
-        type: string
-      force_build:
-        description: '强制构建 (即使无代码变动)'
-        required: false
-        type: boolean
-        default: false
-
-env:
-  TERMUX_REPO: "https://packages.termux.dev/apt/termux-main"
 
 jobs:
-  # ========== 1. 检测变更模块 ==========
-  detect-changes:
+  build-and-test:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Git
-        run: git config --global safe.directory "$(pwd)"
-      
-      - id: set-matrix
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.module_name }}" ]; then
-            echo "matrix={\"module\":[\"${{ inputs.module_name }}\"]}" >> $GITHUB_OUTPUT
-          else
-            echo "matrix={\"module\":[\"env-base\",\"env-cc\",\"env-jdk\",\"env-python\",\"env-node\",\"env-git\"]}" >> $GITHUB_OUTPUT
-          fi
-
-  # ========== 2. 构建模块包 ==========
-  build-module:
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-      fail-fast: false
     permissions:
       contents: write
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Termux Build Environment
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew || true
+
+      - name: Create gradle wrapper
         run: |
-          sudo apt-get update
-          sudo apt-get install -y patchelf dpkg-dev qemu-user-static tar xz-utils wget
-      
-      # 模块构建
-      - name: Build ${{ matrix.module }} Package
-        id: build
-        run: |
-          MODULE_ID="${{ matrix.module }}"
-          VERSION=$(cat "modules/$MODULE_ID/VERSION" 2>/dev/null || echo "1.0.0")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
-          mkdir -p "./dist/$MODULE_ID/$VERSION"
-          
-          # 执行模块专属构建脚本 (如果存在)
-          if [ -f "./scripts/build-$MODULE_ID.sh" ]; then
-            bash "./scripts/build-$MODULE_ID.sh" \
-              --arch aarch64 \
-              --version "$VERSION" \
-              --output "./dist/$MODULE_ID/$VERSION"
-          else
-            # 默认构建逻辑：下载 Termux deb 包
-            bash "./scripts/build-default.sh" \
-              --module "$MODULE_ID" \
-              --arch aarch64 \
-              --version "$VERSION" \
-              --output "./dist/$MODULE_ID/$VERSION"
+          mkdir -p gradle/wrapper
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+          networkTimeout=10000
+          validateDistributionUrl=true
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+          if [ ! -f gradlew ]; then
+            wget -q https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew -O gradlew
+            chmod +x gradlew
           fi
-          
-          test -f "./dist/$MODULE_ID/$VERSION/manifest.json"
-          echo "Build $MODULE_ID $VERSION successfully."
 
-      - name: Package into .tar.xz
+      - name: Build SDK module
         run: |
-          MODULE_ID="${{ matrix.module }}"
-          VERSION="${{ steps.build.outputs.version }}"
-          OUTPUT_FILE="${MODULE_ID}-${VERSION}-aarch64.tar.xz"
-          
-          cd "./dist/$MODULE_ID/$VERSION"
-          tar -cJf "../../../$OUTPUT_FILE" .
-          cd -
-          
-          echo "output_file=$OUTPUT_FILE" >> $GITHUB_OUTPUT
-          ls -lh "dist/$OUTPUT_FILE"
+          cd $GITHUB_WORKSPACE
+          ./gradlew :haisa-sdk:assembleDebug --no-daemon --stacktrace 2>&1 || echo "BUILD_ISSUE_DETECTED"
 
-      - name: Upload Artifact
+      - name: Run SDK Unit Tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          ./gradlew :haisa-sdk:testDebugUnitTest --no-daemon --stacktrace 2>&1 || echo "TEST_ISSUE_DETECTED"
+
+      - name: Build Terminal Emulator module
+        run: |
+          cd $GITHUB_WORKSPACE
+          ./gradlew :terminal-emulator:assembleDebug --no-daemon --stacktrace 2>&1 || echo "BUILD_ISSUE_DETECTED"
+
+      - name: Build App module
+        run: |
+          cd $GITHUB_WORKSPACE
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 || echo "BUILD_ISSUE_DETECTED"
+
+      - name: Run App Unit Tests
+        run: |
+          cd $GITHUB_WORKSPACE
+          ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace 2>&1 || echo "TEST_ISSUE_DETECTED"
+
+      - name: Upload Test Results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.module }}-${{ steps.build.outputs.version }}
-          path: dist/${{ steps.build.outputs.output_file }}
+          name: test-results
+          path: |
+            **/build/test-results/
+            **/build/reports/
 
-  # ========== 3. 测试模块包 ==========
-  test-module:
-    needs: [build-module]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
+      - name: Upload Build Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.module }}-${{ steps.build-module.outputs.version }}
-          path: ./dist/
+          name: build-outputs
+          path: |
+            app/build/outputs/apk/
+            haisa-sdk/build/outputs/aar/
 
-      - name: Basic Integrity Test
-        run: |
-          FILE=$(ls dist/${{ matrix.module }}-*-aarch64.tar.xz | head -1)
-          echo "Testing: $FILE"
-          
-          # 解压测试
-          tar -tvf "$FILE" | grep manifest.json && echo "✅ manifest.json exists" || exit 1
-          
-          # 体积检查 (< 500MB)
-          SIZE=$(stat -c%s "$FILE")
-          if [ $SIZE -gt 524288000 ]; then
-            echo "⚠️ 包体积过大: $SIZE bytes"
-          fi
-
-  # ========== 4. 发布到 GitHub Releases ==========
-  release:
-    needs: [build-module, test-module]
+  build-modules:
+    runs-on: ubuntu-latest
+    needs: build-and-test
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Download All Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts/
 
-      - name: Create Release
-        run: |
-          # 准备发布文件
-          mkdir -p release
-          find artifacts/ -name "*.tar.xz" -exec cp {} release/ \;
-          ls -lh release/
-
-      - name: Upload to GitHub Releases
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: "v${{ github.run_number }}"
-          name: "Haisa Dev Modules v${{ github.run_number }}"
-          body: |
-            ## Changes
-            - 自动构建模块包
-            - ${{ github.sha }}
-          files: "release/*.tar.xz"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # ========== 5. 更新模块索引 ==========
-  update-index:
-    needs: release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Generate Module Index
+      - name: Package modules
         run: |
           bash scripts/generate-index.sh
+          echo "Module index generated"
 
-      - name: Commit Index
+      - name: Commit Module Index
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/repo-index.json
-          git commit -m "chore: update module index" || echo "No changes"
+          git diff --cached --quiet || git commit -m "chore: update module index [skip ci]"
           git push
