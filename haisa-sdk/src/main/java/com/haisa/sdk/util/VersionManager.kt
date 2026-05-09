@@ -125,11 +125,11 @@ object VersionManager {
     }
 
     fun findLatestVersion(versions: List<SemanticVersion>): SemanticVersion? {
-        return versions.filter { it.isStable }.maxWithOrNull(null)
+        return versions.filter { it.isStable }.maxOrNull()
     }
 
     fun findLatestPreRelease(versions: List<SemanticVersion>): SemanticVersion? {
-        return versions.maxWithOrNull(null)
+        return versions.maxOrNull()
     }
 
     fun bump(version: SemanticVersion, type: BumpType): SemanticVersion {
