@@ -1,0 +1,7 @@
+{
+  "module_id": "env-cc",
+  "version": "1.0.0",
+  "description": "Haisa env-cc module",
+  "arch": "aarch64",
+  "size_mb": 10
+}

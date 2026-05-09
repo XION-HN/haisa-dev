@@ -1,0 +1,7 @@
+{
+  "module_id": "env-python",
+  "version": "1.0.0",
+  "description": "Haisa env-python module",
+  "arch": "aarch64",
+  "size_mb": 10
+}

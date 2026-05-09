@@ -1,0 +1,7 @@
+{
+  "module_id": "env-base",
+  "version": "1.0.0",
+  "description": "Haisa env-base module",
+  "arch": "aarch64",
+  "size_mb": 10
+}

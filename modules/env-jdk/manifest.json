@@ -1,0 +1,7 @@
+{
+  "module_id": "env-jdk",
+  "version": "1.0.0",
+  "description": "Haisa env-jdk module",
+  "arch": "aarch64",
+  "size_mb": 10
+}

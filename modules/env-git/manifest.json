@@ -1,0 +1,7 @@
+{
+  "module_id": "env-git",
+  "version": "1.0.0",
+  "description": "Haisa env-git module",
+  "arch": "aarch64",
+  "size_mb": 10
+}

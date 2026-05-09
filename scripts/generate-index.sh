@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+
+# Generate module index for IDE consumption
+OUTPUT="docs/repo-index.json"
+mkdir -p "$(dirname "$OUTPUT")"
+
+echo "Generating module index..."
+
+cat > "$OUTPUT" << INDEX
+{
+  "version": "1.0.0",
+  "last_updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "base_url": "https://github.com/XION-HN/haisa-dev/releases/download",
+  "modules": [
+    {
+      "id": "env-base",
+      "name": "Core Runtime",
+      "description": "Base libraries and tools",
+      "latest": "1.0.0",
+      "size_mb": 5,
+      "dependencies": []
+    },
+    {
+      "id": "env-cc",
+      "name": "C/C++ Toolchain",
+      "description": "Clang/LLVM for C/C++ development",
+      "latest": "1.0.0",
+      "size_mb": 80,
+      "dependencies": ["env-base"]
+    },
+    {
+      "id": "env-jdk",
+      "name": "Java JDK",
+      "description": "OpenJDK for Java and Android development",
+      "latest": "1.0.0",
+      "size_mb": 180,
+      "dependencies": ["env-base"]
+    },
+    {
+      "id": "env-python",
+      "name": "Python 3",
+      "description": "Python 3.11 runtime",
+      "latest": "1.0.0",
+      "size_mb": 40,
+      "dependencies": ["env-base"]
+    },
+    {
+      "id": "env-node",
+      "name": "Node.js",
+      "description": "Node.js LTS runtime",
+      "latest": "1.0.0",
+      "size_mb": 35,
+      "dependencies": ["env-base"]
+    },
+    {
+      "id": "env-git",
+      "name": "Git",
+      "description": "Version control tool",
+      "latest": "1.0.0",
+      "size_mb": 10,
+      "dependencies": ["env-base"]
+    }
+  ]
+}
+INDEX
+
+echo "✅ Module index generated at $OUTPUT"
