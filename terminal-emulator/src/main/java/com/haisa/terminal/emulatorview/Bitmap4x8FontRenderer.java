@@ -41,8 +41,8 @@ class Bitmap4x8FontRenderer extends BaseTextRenderer {
 
     public Bitmap4x8FontRenderer(Resources resources, ColorScheme scheme) {
         super(scheme);
-        int fontResource = AndroidCompat.SDK <= 3 ? R.drawable.atari_small
-                : R.drawable.atari_small_nodpi;
+int fontResource = AndroidCompat.SDK <= 3 ? com.haisa.terminal.R.drawable.atari_small
+            : com.haisa.terminal.R.drawable.atari_small_nodpi;
         mFont = BitmapFactory.decodeResource(resources,fontResource);
         mPaint = new Paint();
         mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
