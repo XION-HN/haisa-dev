@@ -7,7 +7,7 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.haisa.sdk.ModuleInfo
+import com.haisa.sdk.model.ModuleInfo
 
 /**
  * 模块列表适配器

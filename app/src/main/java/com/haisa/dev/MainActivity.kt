@@ -12,8 +12,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.haisa.sdk.HaisaEnvironment
-import com.haisa.sdk.InstallProgress
-import com.haisa.sdk.ModuleInfo
+import com.haisa.sdk.model.InstallProgress
+import com.haisa.sdk.model.InstallStatus
+import com.haisa.sdk.model.ModuleInfo
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -121,20 +122,21 @@ class MainActivity : AppCompatActivity() {
         currentInstallJob = lifecycleScope.launch {
             haisa.installModule(module.id, module.version)
                 .collect { progress ->
-                    when (progress.status) {
-                        InstallProgress.InstallStatus.DOWNLOADING -> {
+when (progress.status) {
+                    InstallStatus.IDLE -> { }
+                    InstallStatus.DOWNLOADING -> {
                             showLoading(true)
                             val percent = progress.progressPercent
                             progressBar.progress = percent
                             updateStatus("正在下载... $percent%")
                         }
-                        InstallProgress.InstallStatus.EXTRACTING -> {
+                        InstallStatus.EXTRACTING -> {
                             updateStatus("正在解压...")
                         }
-                        InstallProgress.InstallStatus.VERIFYING -> {
+                        InstallStatus.VERIFYING -> {
                             updateStatus("正在验证...")
                         }
-                        InstallProgress.InstallStatus.FINISHED -> {
+                        InstallStatus.FINISHED -> {
                             showLoading(false)
                             Toast.makeText(
                                 this@MainActivity,
@@ -143,7 +145,7 @@ class MainActivity : AppCompatActivity() {
                             ).show()
                             loadModules() // 刷新列表
                         }
-                        InstallProgress.InstallStatus.ERROR -> {
+                        InstallStatus.ERROR -> {
                             showLoading(false)
                             Toast.makeText(
                                 this@MainActivity,
