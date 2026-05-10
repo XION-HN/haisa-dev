@@ -1,6 +1,5 @@
 package com.haisa.sdk.engine
 
-import com.haisa.sdk.model.BuildTaskStatus
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.UUID
