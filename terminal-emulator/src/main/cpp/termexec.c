@@ -9,7 +9,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
-#include <linux/ptmx.h>
 
 static int ptmxfd = -1;
 
