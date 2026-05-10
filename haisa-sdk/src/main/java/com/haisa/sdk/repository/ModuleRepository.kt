@@ -108,11 +108,14 @@ class ModuleRepositoryImpl(
             val moduleInfo = cache["available"]?.find { it.id == moduleId }
             val totalSize = (moduleInfo?.sizeInMB ?: 10) * 1024L * 1024L
 
+            var lastEmittedPercent = 0
             downloadFile(downloadUrl, cacheFile) { bytesRead ->
                 val percent = if (totalSize > 0) ((bytesRead * 100) / totalSize).toInt().coerceAtMost(95) else 0
-                emit(InstallProgress(moduleId, InstallStatus.DOWNLOADING, percent,
-                    downloadedBytes = bytesRead, totalBytes = totalSize))
+                lastEmittedPercent = percent
             }
+
+            emit(InstallProgress(moduleId, InstallStatus.DOWNLOADING, lastEmittedPercent,
+                downloadedBytes = cacheFile.length(), totalBytes = totalSize))
 
             emit(InstallProgress(moduleId, InstallStatus.EXTRACTING, 95,
                 message = "Extracting module..."))
