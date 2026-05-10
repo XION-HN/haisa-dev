@@ -11,9 +11,7 @@
 
         <action
             android:id="@+id/action_store_to_detail"
-            app:destination="@id/moduleDetailFragment"
-            app:enterAnim="@anim/nav_default_enter_anim"
-            app:exitAnim="@anim/nav_default_exit_anim" />
+            app:destination="@id/moduleDetailFragment" />
 
     </fragment>
 
@@ -24,7 +22,7 @@
 
         <argument
             android:name="module_id"
-            app:type="string" />
+            app:argType="string" />
 
     </fragment>
 
