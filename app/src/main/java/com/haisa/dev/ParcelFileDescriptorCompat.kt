@@ -15,12 +15,23 @@ object ParcelFileDescriptorCompat {
         return try {
             val ptmx = RandomAccessFile("/dev/ptmx", "rw")
             val fd = ptmx.fd
-            val pfd = ParcelFileDescriptor.adoptFd(fd.toInt())
+            val intFd = getFileDescriptorInt(fd)
+            val pfd = ParcelFileDescriptor.adoptFd(intFd)
             val ptsName = getPtsName(fd)
             grantAccess(ptsName)
             pfd
         } catch (e: Exception) {
             null
+        }
+    }
+
+    private fun getFileDescriptorInt(fd: FileDescriptor): Int {
+        return try {
+            val descriptorField = FileDescriptor::class.java.getDeclaredField("descriptor")
+            descriptorField.isAccessible = true
+            descriptorField.getInt(fd)
+        } catch (e: Exception) {
+            -1
         }
     }
 
