@@ -1,7 +1,28 @@
 {
   "module_id": "env-node",
-  "version": "1.0.0",
-  "description": "Haisa env-node module",
+  "package_id": "env-node-20.11.0-aarch64",
+  "version": "20.11.0",
   "arch": "aarch64",
-  "size_mb": 10
+  "description": "Node.js 20 LTS runtime with npm and npx",
+  "min_base_version": "1.0.0",
+  "dependencies": ["env-base"],
+  "entry_binaries": {
+    "node": "bin/node",
+    "npm": "bin/npm",
+    "npx": "bin/npx"
+  },
+  "env_vars": {
+    "NODE_HOME": "{{install_dir}}",
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "NPM_CONFIG_CACHE": "{{install_dir}}/cache/npm",
+    "NPM_CONFIG_PREFIX": "{{install_dir}}"
+  },
+  "install_size_mb": 35,
+  "ide_integrations": [
+    {
+      "ide_type": "haisa-ide",
+      "tasks": ["node-run", "npm-install", "npm-run-script", "npm-test"]
+    }
+  ]
 }

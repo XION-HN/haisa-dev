@@ -1,16 +1,25 @@
 package com.haisa.sdk.repository
 
+import android.util.Log
 import com.haisa.sdk.model.InstallProgress
 import com.haisa.sdk.model.InstallStatus
 import com.haisa.sdk.model.InstalledModule
 import com.haisa.sdk.model.ModuleInfo
 import com.haisa.sdk.data.LocalDataSource
 import com.haisa.sdk.network.GitHubReleasesSource
+import com.haisa.sdk.util.ModuleExtractor
+import com.haisa.sdk.util.PathResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.zip.ZipInputStream
 
 interface ModuleRepository {
     suspend fun fetchAvailableModules(): Result<List<ModuleInfo>>
@@ -29,6 +38,14 @@ class ModuleRepositoryImpl(
 ) : ModuleRepository {
 
     private val cache = mutableMapOf<String, List<ModuleInfo>>()
+    private val httpClient = OkHttpClient.Builder()
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
+
+    companion object {
+        private const val TAG = "ModuleRepository"
+    }
 
     override suspend fun fetchAvailableModules(): Result<List<ModuleInfo>> {
         val remoteResult = remoteSource.fetchAvailableModules()
@@ -70,25 +87,70 @@ class ModuleRepositoryImpl(
     }
 
     override fun installModule(moduleId: String, version: String?): Flow<InstallProgress> = flow {
-        val targetVersion = version ?: "1.0.0"
+        val targetVersion = version ?: resolveLatestVersion(moduleId) ?: "1.0.0"
         val installDir = localDataSource.getModuleInstallPath(moduleId, targetVersion)
+
+        val dependencies = resolveDependencies(moduleId)
+        for (depId in dependencies) {
+            if (!isModuleInstalled(depId)) {
+                emit(InstallProgress(moduleId, InstallStatus.DOWNLOADING, 0,
+                    message = "Installing dependency: $depId"))
+                installModuleInternal(depId, resolveLatestVersion(depId) ?: "1.0.0")
+            }
+        }
 
         emit(InstallProgress(moduleId, InstallStatus.DOWNLOADING, 0))
 
-        installDir.mkdirs()
+        val downloadUrl = resolveDownloadUrl(moduleId, targetVersion)
+        val cacheFile = File(localDataSource.getCacheDir(), "$moduleId-$targetVersion.zip")
 
-        localDataSource.saveInstalledModule(
-            InstalledModule(
-                id = moduleId,
-                version = targetVersion,
-                installDate = System.currentTimeMillis(),
-                sizeInBytes = calculateDirSize(installDir),
-                installPath = installDir.absolutePath
+        try {
+            val moduleInfo = cache["available"]?.find { it.id == moduleId }
+            val totalSize = (moduleInfo?.sizeInMB ?: 10) * 1024L * 1024L
+
+            downloadFile(downloadUrl, cacheFile) { bytesRead ->
+                val percent = if (totalSize > 0) ((bytesRead * 100) / totalSize).toInt().coerceAtMost(95) else 0
+                emit(InstallProgress(moduleId, InstallStatus.DOWNLOADING, percent,
+                    downloadedBytes = bytesRead, totalBytes = totalSize))
+            }
+
+            emit(InstallProgress(moduleId, InstallStatus.EXTRACTING, 95,
+                message = "Extracting module..."))
+
+            installDir.mkdirs()
+            extractArchive(cacheFile, installDir)
+
+            val validation = ModuleExtractor.validateModuleStructure(installDir)
+            if (!validation.isValid) {
+                emit(InstallProgress(moduleId, InstallStatus.ERROR, 0,
+                    message = "Validation failed: ${validation.errors.joinToString()}"))
+                return@flow
+            }
+
+            emit(InstallProgress(moduleId, InstallStatus.VERIFYING, 98,
+                message = "Verifying integrity..."))
+
+            localDataSource.saveInstalledModule(
+                InstalledModule(
+                    id = moduleId,
+                    version = targetVersion,
+                    installDate = System.currentTimeMillis(),
+                    sizeInBytes = calculateDirSize(installDir),
+                    installPath = installDir.absolutePath
+                )
             )
-        )
-        localDataSource.setActiveVersion(moduleId, targetVersion)
+            localDataSource.setActiveVersion(moduleId, targetVersion)
 
-        emit(InstallProgress(moduleId, InstallStatus.FINISHED, 100))
+            cacheFile.delete()
+
+            emit(InstallProgress(moduleId, InstallStatus.FINISHED, 100))
+        } catch (e: Exception) {
+            Log.e(TAG, "Install failed for $moduleId", e)
+            installDir.deleteRecursively()
+            cacheFile.delete()
+            emit(InstallProgress(moduleId, InstallStatus.ERROR, 0,
+                message = e.message ?: "Installation failed"))
+        }
     }.flowOn(Dispatchers.IO)
 
     override fun switchModuleVersion(moduleId: String, version: String): Boolean {
@@ -99,6 +161,11 @@ class ModuleRepositoryImpl(
     }
 
     override fun uninstallModule(moduleId: String, version: String?): Boolean {
+        val targetVersion = version ?: localDataSource.getActiveVersion(moduleId) ?: return false
+        val installDir = localDataSource.getModuleInstallPath(moduleId, targetVersion)
+        if (installDir.exists()) {
+            installDir.deleteRecursively()
+        }
         localDataSource.removeInstalledModule(moduleId, version)
         return true
     }
@@ -107,10 +174,109 @@ class ModuleRepositoryImpl(
         val version = localDataSource.getActiveVersion(moduleId) ?: return emptyMap()
         val installDir = localDataSource.getModuleInstallPath(moduleId, version)
         if (!installDir.exists()) return emptyMap()
+
+        val manifest = ModuleExtractor.readManifest(installDir)
+        if (manifest != null && manifest.envVars.isNotEmpty()) {
+            val currentPath = System.getenv("PATH") ?: ""
+            return manifest.resolveEnvVars(installDir.absolutePath, currentPath)
+        }
+
         return mapOf(
             "MODULE_HOME" to installDir.absolutePath,
-            "PATH" to "${installDir.absolutePath}/bin"
+            "PATH" to "${installDir.absolutePath}/bin:${System.getenv("PATH") ?: ""}"
         )
+    }
+
+    private suspend fun installModuleInternal(moduleId: String, version: String) {
+        val installDir = localDataSource.getModuleInstallPath(moduleId, version)
+        val downloadUrl = resolveDownloadUrl(moduleId, version)
+        val cacheFile = File(localDataSource.getCacheDir(), "$moduleId-$version.zip")
+
+        downloadFile(downloadUrl, cacheFile) { /* silent for deps */ }
+        installDir.mkdirs()
+        extractArchive(cacheFile, installDir)
+
+        localDataSource.saveInstalledModule(
+            InstalledModule(
+                id = moduleId,
+                version = version,
+                installDate = System.currentTimeMillis(),
+                sizeInBytes = calculateDirSize(installDir),
+                installPath = installDir.absolutePath
+            )
+        )
+        localDataSource.setActiveVersion(moduleId, version)
+        cacheFile.delete()
+    }
+
+    private fun downloadFile(url: String, destFile: File, onProgress: (Long) -> Unit) {
+        val request = Request.Builder().url(url).build()
+        val response = httpClient.newCall(request).execute()
+
+        if (!response.isSuccessful) {
+            throw Exception("Download failed: HTTP ${response.code}")
+        }
+
+        val body = response.body ?: throw Exception("Empty response body")
+        val inputStream = body.byteStream()
+        val outputStream = FileOutputStream(destFile)
+
+        val buffer = ByteArray(8192)
+        var bytesRead: Int
+        var totalBytesRead = 0L
+
+        inputStream.use { input ->
+            outputStream.use { output ->
+                while (input.read(buffer).also { bytesRead = it } != -1) {
+                    output.write(buffer, 0, bytesRead)
+                    totalBytesRead += bytesRead
+                    onProgress(totalBytesRead)
+                }
+            }
+        }
+
+        response.close()
+    }
+
+    private fun extractArchive(archiveFile: File, targetDir: File) {
+        ZipInputStream(FileInputStream(archiveFile)).use { zis ->
+            var entry = zis.nextEntry
+            while (entry != null) {
+                val entryFile = File(targetDir, entry.name)
+                if (entry.isDirectory) {
+                    entryFile.mkdirs()
+                } else {
+                    entryFile.parentFile?.mkdirs()
+                    FileOutputStream(entryFile).use { fos ->
+                        val buffer = ByteArray(8192)
+                        var len: Int
+                        while (zis.read(buffer).also { len = it } > 0) {
+                            fos.write(buffer, 0, len)
+                        }
+                    }
+                }
+                zis.closeEntry()
+                entry = zis.nextEntry
+            }
+        }
+    }
+
+    private fun resolveDownloadUrl(moduleId: String, version: String): String {
+        val cached = cache["available"]?.find { it.id == moduleId }
+        if (cached != null && cached.downloadUrl.isNotEmpty()) {
+            return cached.downloadUrl
+        }
+        return "https://github.com/XION-HN/haisa-dev/releases/download/${moduleId}-v${version}/${moduleId}-${version}-aarch64.zip"
+    }
+
+    private suspend fun resolveLatestVersion(moduleId: String): String? {
+        val cached = cache["available"]?.find { it.id == moduleId }
+        return cached?.version
+    }
+
+    private fun resolveDependencies(moduleId: String): List<String> {
+        val cached = cache["available"]?.find { it.id == moduleId }
+        return cached?.dependencies ?: emptyList()
     }
 
     private fun calculateDirSize(dir: File): Long {

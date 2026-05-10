@@ -1,7 +1,25 @@
 {
   "module_id": "env-git",
-  "version": "1.0.0",
-  "description": "Haisa env-git module",
+  "package_id": "env-git-2.43.0-aarch64",
+  "version": "2.43.0",
   "arch": "aarch64",
-  "size_mb": 10
+  "description": "Git version control system",
+  "min_base_version": "1.0.0",
+  "dependencies": ["env-base"],
+  "entry_binaries": {
+    "git": "bin/git"
+  },
+  "env_vars": {
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "GIT_EXEC_PATH": "{{install_dir}}/libexec/git-core",
+    "GIT_TEMPLATE_DIR": "{{install_dir}}/share/git-core/templates"
+  },
+  "install_size_mb": 10,
+  "ide_integrations": [
+    {
+      "ide_type": "haisa-ide",
+      "tasks": ["git-init", "git-clone", "git-commit", "git-push", "git-pull", "git-status"]
+    }
+  ]
 }

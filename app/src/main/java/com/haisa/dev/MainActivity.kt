@@ -1,5 +1,6 @@
 package com.haisa.dev
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -191,7 +192,8 @@ when (progress.status) {
             .setTitle("确认卸载")
             .setMessage("确定要卸载 ${module.name} 吗？")
             .setPositiveButton("卸载") { _, _ ->
-                // 执行卸载
+                val success = haisa.switchModuleVersion(module.id, module.installedVersion ?: module.version)
+                haisa.switchModuleVersion(module.id, module.installedVersion ?: module.version)
                 Toast.makeText(this, "已卸载", Toast.LENGTH_SHORT).show()
                 loadModules()
             }
@@ -234,9 +236,8 @@ when (progress.status) {
     }
 
     private fun openTerminal() {
-        // 启动 TerminalActivity
-        // val intent = Intent(this, TerminalActivity::class.java)
-        // startActivity(intent)
+        val intent = Intent(this, TerminalActivity::class.java)
+        startActivity(intent)
     }
 
     override fun onDestroy() {

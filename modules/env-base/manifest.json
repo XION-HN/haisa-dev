@@ -1,7 +1,23 @@
 {
   "module_id": "env-base",
+  "package_id": "env-base-1.0.0-aarch64",
   "version": "1.0.0",
-  "description": "Haisa env-base module",
   "arch": "aarch64",
-  "size_mb": 10
+  "description": "Core runtime libraries and base tools (sh, busybox, libc)",
+  "min_base_version": "1.0.0",
+  "dependencies": [],
+  "entry_binaries": {
+    "sh": "bin/sh",
+    "busybox": "bin/busybox"
+  },
+  "env_vars": {
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "HOME": "{{install_dir}}/home",
+    "TERM": "xterm-256color",
+    "LANG": "en_US.UTF-8",
+    "TMPDIR": "{{install_dir}}/tmp"
+  },
+  "install_size_mb": 5,
+  "ide_integrations": []
 }

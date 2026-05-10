@@ -1,7 +1,33 @@
 {
   "module_id": "env-cc",
-  "version": "1.0.0",
-  "description": "Haisa env-cc module",
+  "package_id": "env-cc-17.0.1-aarch64",
+  "version": "17.0.1",
   "arch": "aarch64",
-  "size_mb": 10
+  "description": "Clang/LLVM toolchain for C/C++ development",
+  "min_base_version": "1.0.0",
+  "dependencies": ["env-base"],
+  "entry_binaries": {
+    "clang": "bin/clang",
+    "clang++": "bin/clang++",
+    "lld": "bin/lld",
+    "ar": "bin/llvm-ar",
+    "nm": "bin/llvm-nm",
+    "objdump": "bin/llvm-objdump",
+    "strip": "bin/llvm-strip"
+  },
+  "env_vars": {
+    "CC": "{{install_dir}}/bin/clang",
+    "CXX": "{{install_dir}}/bin/clang++",
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "CPATH": "{{install_dir}}/include",
+    "LIBRARY_PATH": "{{install_dir}}/lib"
+  },
+  "install_size_mb": 80,
+  "ide_integrations": [
+    {
+      "ide_type": "haisa-ide",
+      "tasks": ["c-compile", "c++-compile", "cmake-build", "make-build"]
+    }
+  ]
 }

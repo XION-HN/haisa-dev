@@ -1,7 +1,29 @@
 {
   "module_id": "env-python",
-  "version": "1.0.0",
-  "description": "Haisa env-python module",
+  "package_id": "env-python-3.11.8-aarch64",
+  "version": "3.11.8",
   "arch": "aarch64",
-  "size_mb": 10
+  "description": "Python 3.11 runtime with pip package manager",
+  "min_base_version": "1.0.0",
+  "dependencies": ["env-base"],
+  "entry_binaries": {
+    "python3": "bin/python3",
+    "python": "bin/python3",
+    "pip3": "bin/pip3",
+    "pip": "bin/pip3"
+  },
+  "env_vars": {
+    "PYTHON_HOME": "{{install_dir}}",
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "PYTHONPATH": "{{install_dir}}/lib/python3.11/site-packages",
+    "PIP_CACHE_DIR": "{{install_dir}}/cache/pip"
+  },
+  "install_size_mb": 40,
+  "ide_integrations": [
+    {
+      "ide_type": "haisa-ide",
+      "tasks": ["python-run", "pip-install", "pip-freeze", "venv-create"]
+    }
+  ]
 }

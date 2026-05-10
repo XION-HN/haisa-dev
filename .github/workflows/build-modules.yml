@@ -36,51 +36,29 @@ jobs:
         key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: gradle-
 
-    - name: Setup Gradle Wrapper
+    - name: Validate Gradle Wrapper
       run: |
-        chmod +x gradlew || true
-        mkdir -p gradle/wrapper
-        if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-          wget -q https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar -O gradle/wrapper/gradle-wrapper.jar
-        fi
-        if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
-          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.5-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
-          echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
-          echo "validateDistributionUrl=true" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-        fi
-        if [ ! -f gradlew ]; then
-          wget -q https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew -O gradlew
-          chmod +x gradlew
-        fi
+        chmod +x gradlew
+        test -f gradle/wrapper/gradle-wrapper.jar || { echo "ERROR: gradle-wrapper.jar missing"; exit 1; }
+        test -f gradle/wrapper/gradle-wrapper.properties || { echo "ERROR: gradle-wrapper.properties missing"; exit 1; }
 
     - name: Build SDK module
-      run: |
-        cd $GITHUB_WORKSPACE
-        ./gradlew :haisa-sdk:assembleDebug --no-daemon --stacktrace 2>&1 || echo "BUILD_ISSUE_DETECTED"
+      run: ./gradlew :haisa-sdk:assembleDebug --no-daemon --stacktrace
 
     - name: Run SDK Unit Tests
-      run: |
-        cd $GITHUB_WORKSPACE
-        ./gradlew :haisa-sdk:testDebugUnitTest --no-daemon --stacktrace 2>&1 || echo "TEST_ISSUE_DETECTED"
+      run: ./gradlew :haisa-sdk:testDebugUnitTest --no-daemon --stacktrace
 
     - name: Build Terminal Emulator module
-      run: |
-        cd $GITHUB_WORKSPACE
-        ./gradlew :terminal-emulator:assembleDebug --no-daemon --stacktrace 2>&1 || echo "BUILD_ISSUE_DETECTED"
+      run: ./gradlew :terminal-emulator:assembleDebug --no-daemon --stacktrace
 
     - name: Build App module
-      run: |
-        cd $GITHUB_WORKSPACE
-        ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 || echo "BUILD_ISSUE_DETECTED"
+      run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
     - name: Run App Unit Tests
-      run: |
-        cd $GITHUB_WORKSPACE
-        ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace 2>&1 || echo "TEST_ISSUE_DETECTED"
+      run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+
+    - name: Run Android Lint
+      run: ./gradlew :haisa-sdk:lintDebug :app:lintDebug --no-daemon 2>&1 || true
 
     - name: Upload Test Results
       if: always()
@@ -92,7 +70,6 @@ jobs:
           **/build/reports/
 
     - name: Upload Build Artifacts
-      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: build-outputs
@@ -125,36 +102,13 @@ jobs:
         key: gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: gradle-
 
-    - name: Setup Gradle Wrapper
-      run: |
-        chmod +x gradlew || true
-        mkdir -p gradle/wrapper
-        if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-          wget -q https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradle/wrapper/gradle-wrapper.jar -O gradle/wrapper/gradle-wrapper.jar
-        fi
-        if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
-          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.5-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
-          echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
-          echo "validateDistributionUrl=true" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-        fi
-        if [ ! -f gradlew ]; then
-          wget -q https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew -O gradlew
-          chmod +x gradlew
-        fi
-
     - name: Build Release APK
       run: |
-        cd $GITHUB_WORKSPACE
+        chmod +x gradlew
         ./gradlew :app:assembleRelease --no-daemon --stacktrace
 
     - name: Build Release AAR
-      run: |
-        cd $GITHUB_WORKSPACE
-        ./gradlew :haisa-sdk:assembleRelease --no-daemon --stacktrace
+      run: ./gradlew :haisa-sdk:assembleRelease --no-daemon --stacktrace
 
     - name: Extract version from tag
       id: version

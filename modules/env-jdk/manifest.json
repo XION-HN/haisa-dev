@@ -1,7 +1,29 @@
 {
   "module_id": "env-jdk",
-  "version": "1.0.0",
-  "description": "Haisa env-jdk module",
+  "package_id": "env-jdk-17.0.8-aarch64",
+  "version": "17.0.8",
   "arch": "aarch64",
-  "size_mb": 10
+  "description": "OpenJDK 17 for Java and Android development",
+  "min_base_version": "1.0.0",
+  "dependencies": ["env-base"],
+  "entry_binaries": {
+    "java": "bin/java",
+    "javac": "bin/javac",
+    "jar": "bin/jar",
+    "javadoc": "bin/javadoc",
+    "jdb": "bin/jdb"
+  },
+  "env_vars": {
+    "JAVA_HOME": "{{install_dir}}",
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "CLASSPATH": "{{install_dir}}/lib/tools.jar:{{install_dir}}/lib/dt.jar"
+  },
+  "install_size_mb": 180,
+  "ide_integrations": [
+    {
+      "ide_type": "haisa-ide",
+      "tasks": ["java-compile", "java-run", "java-debug", "javadoc"]
+    }
+  ]
 }

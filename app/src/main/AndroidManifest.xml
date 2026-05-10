@@ -23,6 +23,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".TerminalActivity"
+            android:exported="false"
+            android:label="Terminal"
+            android:theme="@style/Theme.HaisaDev" />
+
     </application>
 
 </manifest>
