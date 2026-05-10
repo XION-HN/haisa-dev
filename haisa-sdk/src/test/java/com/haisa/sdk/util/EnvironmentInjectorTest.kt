@@ -15,7 +15,7 @@ class EnvironmentInjectorTest {
 
         val result = EnvironmentInjector.inject(listOf(env1, env2), currentEnv)
 
-        assertEquals("/modules/env-jdk/bin:/modules/env-python/bin:/system/bin", result["PATH"])
+        assertEquals("/modules/env-python/bin:/modules/env-jdk/bin:/system/bin", result["PATH"])
         assertEquals("/modules/env-jdk/17", result["JAVA_HOME"])
         assertEquals("/modules/env-python/3.11", result["PYTHON_HOME"])
         assertEquals("/data", result["HOME"])
@@ -48,7 +48,7 @@ class EnvironmentInjectorTest {
 
         val result = EnvironmentInjector.inject(listOf(env1, env2), currentEnv)
 
-        assertEquals("/modules/env-jdk/lib:/modules/env-cc/lib:/system/lib", result["LD_LIBRARY_PATH"])
+        assertEquals("/modules/env-cc/lib:/modules/env-jdk/lib:/system/lib", result["LD_LIBRARY_PATH"])
     }
 
     @Test

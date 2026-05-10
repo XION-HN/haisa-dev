@@ -70,24 +70,24 @@ object VersionManager {
         companion object {
             val ZERO = SemanticVersion(0, 0, 0)
 
-            fun parse(version: String): SemanticVersion? {
-                val regex = Regex(
-                    """^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9.\-]+))?(?:\+([a-zA-Z0-9.\-]+))?$"""
-                )
-                val match = regex.matchEntire(version.trim()) ?: return null
+        fun parse(version: String): SemanticVersion? {
+            val regex = Regex(
+                """^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([a-zA-Z0-9.\-]+))?(?:\+([a-zA-Z0-9.\-]+))?$"""
+            )
+            val match = regex.matchEntire(version.trim()) ?: return null
 
-                return try {
-                    SemanticVersion(
-                        major = match.groupValues[1].toInt(),
-                        minor = match.groupValues[2].toInt(),
-                        patch = match.groupValues[3].toInt(),
-                        preRelease = match.groupValues[4].takeIf { it.isNotEmpty() },
-                        buildMetadata = match.groupValues[5].takeIf { it.isNotEmpty() }
-                    )
-                } catch (e: NumberFormatException) {
-                    null
-                }
+            return try {
+                SemanticVersion(
+                    major = match.groupValues[1].toInt(),
+                    minor = match.groupValues[2].toInt(),
+                    patch = match.groupValues[3].toInt(),
+                    preRelease = match.groupValues[4].takeIf { it.isNotEmpty() },
+                    buildMetadata = match.groupValues[5].takeIf { it.isNotEmpty() }
+                )
+            } catch (e: NumberFormatException) {
+                null
             }
+        }
         }
     }
 

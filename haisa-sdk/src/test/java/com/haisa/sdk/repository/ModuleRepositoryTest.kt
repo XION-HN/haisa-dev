@@ -59,6 +59,8 @@ class ModuleRepositoryTest {
     @Test
     fun `uninstallModule delegates to localDataSource`() {
         `when`(localDataSource.getActiveVersion("env-python")).thenReturn("3.11.8")
+        `when`(localDataSource.getModuleInstallPath("env-python", "3.11.8"))
+            .thenReturn(java.io.File("/tmp/test/modules/env-python/3.11.8"))
         val result = repository.uninstallModule("env-python", "3.11.8")
         verify(localDataSource).removeInstalledModule("env-python", "3.11.8")
         assertTrue(result)

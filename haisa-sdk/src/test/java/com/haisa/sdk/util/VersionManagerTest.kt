@@ -374,7 +374,8 @@ class VersionManagerTest {
             minBaseVersion = "1.0.0"
         )
         val required = vm.parse(manifest.minBaseVersion)!!
-        assertTrue(vm.isCompatible(baseInstalled, required))
+        assertTrue(vm.satisfiesRequirement(baseInstalled, ">=1.0.0"))
+        assertFalse(vm.isCompatible(baseInstalled, required))
     }
 
     @Test

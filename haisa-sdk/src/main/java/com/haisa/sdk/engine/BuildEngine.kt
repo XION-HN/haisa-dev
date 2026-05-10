@@ -74,7 +74,7 @@ class BuildEngine {
             errorReader.close()
             process.destroy()
         } catch (e: Exception) {
-            Log.e(TAG, "Build execution failed", e)
+            try { Log.e(TAG, "Build execution failed", e) } catch (_: Throwable) {}
             emit(BuildProgress(BuildStatus.FAILED, "Build error: ${e.message}", isError = true))
         }
     }.flowOn(Dispatchers.IO)
