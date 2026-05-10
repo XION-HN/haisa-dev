@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "last_updated": "2026-05-09T18:42:20Z",
+  "last_updated": "2026-05-10T06:30:37Z",
   "base_url": "https://github.com/XION-HN/haisa-dev/releases/download",
   "modules": [
     {
       "id": "env-base",
       "name": "Core Runtime",
-      "description": "Base libraries and tools",
+      "description": "Core runtime libraries and base tools (sh, busybox, libc)",
       "latest": "1.0.0",
       "size_mb": 5,
       "dependencies": []
@@ -14,42 +14,52 @@
     {
       "id": "env-cc",
       "name": "C/C++ Toolchain",
-      "description": "Clang/LLVM for C/C++ development",
-      "latest": "1.0.0",
+      "description": "Clang/LLVM toolchain for C/C++ development",
+      "latest": "17.0.1",
       "size_mb": 80,
-      "dependencies": ["env-base"]
-    },
-    {
-      "id": "env-jdk",
-      "name": "Java JDK",
-      "description": "OpenJDK for Java and Android development",
-      "latest": "1.0.0",
-      "size_mb": 180,
-      "dependencies": ["env-base"]
-    },
-    {
-      "id": "env-python",
-      "name": "Python 3",
-      "description": "Python 3.11 runtime",
-      "latest": "1.0.0",
-      "size_mb": 40,
-      "dependencies": ["env-base"]
-    },
-    {
-      "id": "env-node",
-      "name": "Node.js",
-      "description": "Node.js LTS runtime",
-      "latest": "1.0.0",
-      "size_mb": 35,
-      "dependencies": ["env-base"]
+      "dependencies": [
+        "env-base"
+      ]
     },
     {
       "id": "env-git",
       "name": "Git",
-      "description": "Version control tool",
-      "latest": "1.0.0",
+      "description": "Git version control system",
+      "latest": "2.43.0",
       "size_mb": 10,
-      "dependencies": ["env-base"]
+      "dependencies": [
+        "env-base"
+      ]
+    },
+    {
+      "id": "env-jdk",
+      "name": "Java JDK",
+      "description": "OpenJDK 17 for Java and Android development",
+      "latest": "17.0.8",
+      "size_mb": 180,
+      "dependencies": [
+        "env-base"
+      ]
+    },
+    {
+      "id": "env-node",
+      "name": "Node.js",
+      "description": "Node.js 20 LTS runtime with npm and npx",
+      "latest": "20.11.0",
+      "size_mb": 35,
+      "dependencies": [
+        "env-base"
+      ]
+    },
+    {
+      "id": "env-python",
+      "name": "Python 3",
+      "description": "Python 3.11 runtime with pip package manager",
+      "latest": "3.11.8",
+      "size_mb": 40,
+      "dependencies": [
+        "env-base"
+      ]
     }
   ]
 }
