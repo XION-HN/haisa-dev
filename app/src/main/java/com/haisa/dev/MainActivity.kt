@@ -192,9 +192,9 @@ when (progress.status) {
             .setTitle("确认卸载")
             .setMessage("确定要卸载 ${module.name} 吗？")
             .setPositiveButton("卸载") { _, _ ->
-                val success = haisa.switchModuleVersion(module.id, module.installedVersion ?: module.version)
-                haisa.switchModuleVersion(module.id, module.installedVersion ?: module.version)
-                Toast.makeText(this, "已卸载", Toast.LENGTH_SHORT).show()
+                val manager = com.haisa.sdk.service.ModuleManager.getInstance(this)
+                val success = manager.uninstallModule(module.id, module.installedVersion)
+                Toast.makeText(this, if (success) "已卸载" else "卸载失败", Toast.LENGTH_SHORT).show()
                 loadModules()
             }
             .setNegativeButton("取消", null)

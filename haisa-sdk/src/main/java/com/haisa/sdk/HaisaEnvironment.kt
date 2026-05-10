@@ -10,7 +10,9 @@ import com.haisa.sdk.model.ProjectConfig
 import com.haisa.sdk.model.ProjectTemplate
 import com.haisa.sdk.service.ModuleManager
 import com.haisa.sdk.util.EnvironmentInjector
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
+import java.io.File
 
 class HaisaEnvironment private constructor(context: Context) {
 
@@ -94,38 +96,39 @@ class HaisaEnvironment private constructor(context: Context) {
                 ProjectTemplate.GO -> "go"
             }
 
-            val projectDir = java.io.File("$outputDir/$projectName")
+            val projectDir = File("$outputDir/$projectName")
             projectDir.mkdirs()
 
-            val srcDir = java.io.File(projectDir, "src")
+            val srcDir = File(projectDir, "src")
             srcDir.mkdirs()
 
             when (template) {
                 ProjectTemplate.PYTHON -> {
-                    java.io.File(srcDir, "main.py").writeText(generatePythonTemplate(projectName))
-                    java.io.File(projectDir, "requirements.txt").writeText("")
-                    java.io.File(projectDir, "README.md").writeText("# $projectName\n\nPython project created by Haisa Dev.\n")
+                    File(srcDir, "main.py").writeText(generatePythonTemplate(projectName))
+                    File(projectDir, "requirements.txt").writeText("")
+                    File(projectDir, "README.md").writeText("# $projectName\n\nPython project created by Haisa Dev.\n")
                 }
                 ProjectTemplate.NODE_JS -> {
-                    java.io.File(srcDir, "index.js").writeText(generateNodeTemplate(projectName))
-                    java.io.File(projectDir, "package.json").writeText(generatePackageJson(projectName))
+                    File(srcDir, "index.js").writeText(generateNodeTemplate(projectName))
+                    File(projectDir, "package.json").writeText(generatePackageJson(projectName))
                 }
                 ProjectTemplate.C_NATIVE -> {
-                    java.io.File(srcDir, "main.c").writeText(generateCTemplate(projectName))
-                    java.io.File(projectDir, "CMakeLists.txt").writeText(generateCMakeLists(projectName))
+                    File(srcDir, "main.c").writeText(generateCTemplate(projectName))
+                    File(projectDir, "CMakeLists.txt").writeText(generateCMakeLists(projectName))
                 }
                 ProjectTemplate.ANDROID_JAVA, ProjectTemplate.ANDROID_KOTLIN -> {
-                    java.io.File(srcDir, "Main.kt").writeText(generateAndroidKtTemplate(projectName))
-                    java.io.File(projectDir, "build.gradle.kts").writeText(generateGradleKtsTemplate(projectName))
+                    File(srcDir, "Main.kt").writeText(generateAndroidKtTemplate(projectName))
+                    File(projectDir, "build.gradle.kts").writeText(generateGradleKtsTemplate(projectName))
                 }
                 ProjectTemplate.RUST -> {
-                    java.io.File(projectDir, "Cargo.toml").writeText(generateCargoToml(projectName))
-                    java.io.File(java.io.File(srcDir, "bin"), "main.rs").also { it.parentFile.mkdirs() }
-                        .writeText(generateRustTemplate())
+                    File(projectDir, "Cargo.toml").writeText(generateCargoToml(projectName))
+                    val binDir = File(srcDir, "bin")
+                    binDir.mkdirs()
+                    File(binDir, "main.rs").writeText(generateRustTemplate())
                 }
                 ProjectTemplate.GO -> {
-                    java.io.File(srcDir, "main.go").writeText(generateGoTemplate(projectName))
-                    java.io.File(projectDir, "go.mod").writeText("module $projectName\ngo 1.21\n")
+                    File(srcDir, "main.go").writeText(generateGoTemplate(projectName))
+                    File(projectDir, "go.mod").writeText("module $projectName\ngo 1.21\n")
                 }
             }
 
@@ -137,8 +140,8 @@ class HaisaEnvironment private constructor(context: Context) {
                 buildTool = buildTool
             )
 
-            val configFile = java.io.File(projectDir, "haisa-config.json")
-            configFile.writeText(com.google.gson.Gson().toJson(config))
+            val configFile = File(projectDir, "haisa-config.json")
+            configFile.writeText(Gson().toJson(config))
 
             Result.success(config)
         } catch (e: Exception) {
@@ -146,110 +149,98 @@ class HaisaEnvironment private constructor(context: Context) {
         }
     }
 
-    private fun generatePythonTemplate(name: String): String = """
-#!/usr/bin/env python3
-"""$name - Created by Haisa Dev"""
+    private fun generatePythonTemplate(name: String): String {
+        return "#!/usr/bin/env python3\n" +
+            "# $name - Created by Haisa Dev\n\n" +
+            "def main():\n" +
+            "    print(\"Hello from $name!\")\n\n" +
+            "if __name__ == \"__main__\":\n" +
+            "    main()\n"
+    }
 
-def main():
-    print("Hello from $name!")
+    private fun generateNodeTemplate(name: String): String {
+        return "const http = require('http');\n\n" +
+            "const port = 3000;\n\n" +
+            "const server = http.createServer((req, res) => {\n" +
+            "  res.writeHead(200, { 'Content-Type': 'text/plain' });\n" +
+            "  res.end('Hello from $name!');\n" +
+            "});\n\n" +
+            "server.listen(port, () => {\n" +
+            "  console.log('Server running at http://localhost:' + port + '/');\n" +
+            "});\n"
+    }
 
-if __name__ == "__main__":
-    main()
-""".trimIndent()
+    private fun generateCTemplate(name: String): String {
+        return "#include <stdio.h>\n\n" +
+            "int main() {\n" +
+            "    printf(\"Hello from $name!\\n\");\n" +
+            "    return 0;\n" +
+            "}\n"
+    }
 
-    private fun generateNodeTemplate(name: String): String = """
-const http = require('http');
+    private fun generateCMakeLists(name: String): String {
+        return "cmake_minimum_required(VERSION 3.10)\n" +
+            "project($name C)\n\n" +
+            "set(CMAKE_C_STANDARD 11)\n\n" +
+            "add_executable($name src/main.c)\n"
+    }
 
-const port = 3000;
+    private fun generatePackageJson(name: String): String {
+        return "{\n" +
+            "  \"name\": \"$name\",\n" +
+            "  \"version\": \"1.0.0\",\n" +
+            "  \"main\": \"src/index.js\",\n" +
+            "  \"scripts\": {\n" +
+            "    \"start\": \"node src/index.js\"\n" +
+            "  }\n" +
+            "}\n"
+    }
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Hello from $name!');
-});
+    private fun generateAndroidKtTemplate(name: String): String {
+        val pkg = name.replace("-", ".").lowercase()
+        return "package $pkg\n\n" +
+            "fun main() {\n" +
+            "    println(\"Hello from $name!\")\n" +
+            "}\n"
+    }
 
-server.listen(port, () => {
-  console.log(\`Server running at http://localhost:\${port}/\`);
-});
-""".trimIndent()
+    private fun generateGradleKtsTemplate(name: String): String {
+        val group = name.replace("-", ".")
+        val pkg = name.replace("-", ".").lowercase()
+        return "plugins {\n" +
+            "    kotlin(\"jvm\") version \"1.9.0\"\n" +
+            "}\n\n" +
+            "group = \"$group\"\n" +
+            "version = \"1.0.0\"\n\n" +
+            "repositories {\n" +
+            "    mavenCentral()\n" +
+            "}\n\n" +
+            "tasks.register<JavaExec>(\"run\") {\n" +
+            "    mainClass.set(\"$pkg.MainKt\")\n" +
+            "}\n"
+    }
 
-    private fun generateCTemplate(name: String): String = """
-#include <stdio.h>
+    private fun generateCargoToml(name: String): String {
+        return "[package]\n" +
+            "name = \"$name\"\n" +
+            "version = \"0.1.0\"\n" +
+            "edition = \"2021\"\n\n" +
+            "[[bin]]\n" +
+            "name = \"$name\"\n" +
+            "path = \"src/bin/main.rs\"\n"
+    }
 
-int main() {
-    printf("Hello from $name!\\n");
-    return 0;
-}
-""".trimIndent()
+    private fun generateRustTemplate(): String {
+        return "fn main() {\n" +
+            "    println!(\"Hello from Haisa Dev!\");\n" +
+            "}\n"
+    }
 
-    private fun generateCMakeLists(name: String): String = """
-cmake_minimum_required(VERSION 3.10)
-project($name C)
-
-set(CMAKE_C_STANDARD 11)
-
-add_executable($name src/main.c)
-""".trimIndent()
-
-    private fun generatePackageJson(name: String): String = """
-{
-  "name": "$name",
-  "version": "1.0.0",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js"
-  }
-}
-""".trimIndent()
-
-    private fun generateAndroidKtTemplate(name: String): String = """
-package ${name.replace("-", ".").lowercase()}
-
-fun main() {
-    println("Hello from $name!")
-}
-""".trimIndent()
-
-    private fun generateGradleKtsTemplate(name: String): String = """
-plugins {
-    kotlin("jvm") version "1.9.0"
-}
-
-group = "${name.replace("-", ".")}"
-version = "1.0.0"
-
-repositories {
-    mavenCentral()
-}
-
-tasks.register<JavaExec>("run") {
-    mainClass.set("${name.replace("-", ".").lowercase()}.MainKt")
-}
-""".trimIndent()
-
-    private fun generateCargoToml(name: String): String = """
-[package]
-name = "$name"
-version = "0.1.0"
-edition = "2021"
-
-[[bin]]
-name = "$name"
-path = "src/bin/main.rs"
-""".trimIndent()
-
-    private fun generateRustTemplate(): String = """
-fn main() {
-    println!("Hello from Haisa Dev!");
-}
-""".trimIndent()
-
-    private fun generateGoTemplate(name: String): String = """
-package main
-
-import "fmt"
-
-func main() {
-    fmt.Println("Hello from $name!")
-}
-""".trimIndent()
+    private fun generateGoTemplate(name: String): String {
+        return "package main\n\n" +
+            "import \"fmt\"\n\n" +
+            "func main() {\n" +
+            "    fmt.Println(\"Hello from $name!\")\n" +
+            "}\n"
+    }
 }

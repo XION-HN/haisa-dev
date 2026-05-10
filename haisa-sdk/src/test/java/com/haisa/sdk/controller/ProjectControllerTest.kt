@@ -10,14 +10,14 @@ class ProjectControllerTest {
 
     @Test
     fun getRequiredModules_androidJava_containsJdkAndCc() {
-        val modules = com.haisa.sdk.util.PathResolver.resolveModuleId("ANDROID_JAVA")
-        assertTrue(modules.contains("env-jdk"))
+    val modules = com.haisa.sdk.util.PathResolver.resolveModuleId(ProjectTemplate.ANDROID_JAVA.name)
+    assertTrue(modules.contains("env-jdk"))
     }
 
     @Test
     fun getRequiredModules_python_containsPython() {
-        val modules = com.haisa.sdk.util.PathResolver.resolveModuleId("PYTHON")
-        assertTrue(modules.contains("env-python"))
+    val modules = com.haisa.sdk.util.PathResolver.resolveModuleId(ProjectTemplate.PYTHON.name)
+    assertTrue(modules.contains("env-python"))
     }
 
     @Test

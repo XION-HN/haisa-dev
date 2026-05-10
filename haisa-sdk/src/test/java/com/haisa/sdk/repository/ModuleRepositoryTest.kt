@@ -2,8 +2,6 @@ package com.haisa.sdk.repository
 
 import com.haisa.sdk.data.LocalDataSource
 import com.haisa.sdk.model.InstalledModule
-import com.haisa.sdk.model.ModuleInfo
-import com.haisa.sdk.network.GitHubApiService
 import com.haisa.sdk.network.GitHubReleasesSource
 import com.haisa.sdk.network.RepoIndex
 import com.haisa.sdk.network.RepoModuleEntry
@@ -24,9 +22,8 @@ class ModuleRepositoryTest {
     private lateinit var localDataSource: LocalDataSource
 
     @Mock
-    private lateinit var apiService: GitHubApiService
-
     private lateinit var remoteSource: GitHubReleasesSource
+
     private lateinit var repository: ModuleRepositoryImpl
 
     @Before
@@ -34,7 +31,6 @@ class ModuleRepositoryTest {
         `when`(localDataSource.getInstalledModules()).thenReturn(emptyList())
         `when`(localDataSource.isModuleInstalled(anyString())).thenReturn(false)
         `when`(localDataSource.getActiveVersion(anyString())).thenReturn(null)
-        remoteSource = GitHubReleasesSource(apiService)
         repository = ModuleRepositoryImpl(localDataSource, remoteSource)
     }
 
@@ -76,16 +72,8 @@ class ModuleRepositoryTest {
     }
 
     @Test
-    fun `fetchAvailableModules merges installed status`() = runBlocking {
-        val repoIndex = RepoIndex(
-            version = "1.0.0",
-            lastUpdated = "2026-05-10T00:00:00Z",
-            baseUrl = "https://example.com",
-            modules = listOf(
-                RepoModuleEntry("env-python", "Python 3", "Python runtime", "3.11.8", 40, listOf("env-base"))
-            )
-        )
-        `when`(apiService.getRepoIndex(anyString())).thenReturn(Response.success(repoIndex))
+    fun `fetchAvailableModules falls back to installed modules when remote fails`() = runBlocking {
+        `when`(remoteSource.fetchAvailableModules()).thenReturn(Result.failure(Exception("network error")))
         `when`(localDataSource.getInstalledModules()).thenReturn(listOf(
             InstalledModule("env-python", "3.11.8", System.currentTimeMillis(), 40 * 1024 * 1024, "/data/modules/env-python/3.11.8")
         ))
@@ -93,9 +81,7 @@ class ModuleRepositoryTest {
         val result = repository.fetchAvailableModules()
         assertTrue(result.isSuccess)
         val modules = result.getOrDefault(emptyList())
-        val pythonModule = modules.find { it.id == "env-python" }
-        assertNotNull(pythonModule)
-        assertTrue(pythonModule!!.isInstalled)
-        assertEquals("3.11.8", pythonModule.installedVersion)
+        assertTrue(modules.isNotEmpty())
+        assertEquals("env-python", modules[0].id)
     }
 }

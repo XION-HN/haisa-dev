@@ -25,10 +25,10 @@ object PathResolver {
     }
 
     fun resolveModuleId(templateName: String): List<String> {
-        return when (templateName) {
+        return when (templateName.lowercase().replace('_', '-')) {
             "android-java", "android-kotlin" -> listOf("env-jdk", "env-cc")
-            "python" -> listOf("env-python")
-            "nodejs" -> listOf("env-node")
+            "python", "python-script" -> listOf("env-python")
+            "node-js", "nodejs" -> listOf("env-node")
             "c-native" -> listOf("env-cc")
             "rust" -> listOf("env-rust")
             "go" -> listOf("env-go")

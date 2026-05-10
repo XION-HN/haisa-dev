@@ -50,9 +50,9 @@ public class TermExec {
         return command(new ArrayList<>(Arrays.asList(command)));
     }
 
-    public @NonNull TermExec command(List<String> command) {
-        command.clear();
-        command.addAll(command);
+    public @NonNull TermExec command(List<String> cmd) {
+        this.command.clear();
+        this.command.addAll(cmd);
         return this;
     }
 
