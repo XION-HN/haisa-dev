@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-10
+
+### Added
+
+- **Module Store UI (Phase 3)**: Full Fragment-based Module Store with search, SwipeRefreshLayout, and Material CardView module cards with category chips and dependency counts
+- **Module Detail Page**: Shows module info, version, size, install status, dependency list, install/uninstall actions with real-time progress
+- **Navigation Component**: Jetpack Navigation graph with store -> detail navigation and up button handling
+- **ModuleStoreViewModel**: MVVM architecture with LiveData state management for module list, search, install progress
+- **ModuleListAdapter**: ListAdapter with DiffUtil for efficient RecyclerView updates
+- **BuildTaskQueue (6.4)**: Build task queue with sequential execution, task status tracking, cancel support, and StateFlow-based queue state observation
+- **IDE Plugin API (7.3)**: `HaisaIdeApi` interface defining the full IDE integration contract — module management, build execution, project creation, terminal sessions, and project lifecycle listeners
+- **HaisaIdeApiImpl**: Reference implementation of the IDE Plugin API backed by HaisaEnvironment
+- **ViewBinding**: Enabled in app build.gradle for type-safe view access
+- **Tests**: BuildTaskQueueTest (4 cases), HaisaIdeApiTest (3 cases)
+
+### Fixed
+
+- **BuildEngine**: Removed `Class.forName("android.util.Log")` reflection — now uses pure `System.err` for test compatibility
+- **BuildEngineTest**: Rewrote to use block-body `@Test` methods to avoid JUnit4 `InvalidTestClassError`
+- **ModuleRepositoryTest**: Switched to `MockitoJUnitRunner.Silent` to avoid `UnnecessaryStubbingException`
+- **termexec.c**: Removed `#include <linux/ptmx.h>` which is not available in Android NDK
+- **ParcelFileDescriptorCompat**: Fixed `fd.toInt()` — now uses reflection to extract int file descriptor from `FileDescriptor` object
+
 ## [1.1.0] - 2026-05-10
 
 ### Added
@@ -50,5 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI/CD**: GitHub Actions workflow
 - **Documentation**: ARCHITECTURE.md, DEVELOPMENT_PLAN.md, INTEGRATION.md, repo-index.json
 
+[1.2.0]: https://github.com/XION-HN/haisa-dev/releases/tag/v1.2.0
 [1.1.0]: https://github.com/XION-HN/haisa-dev/releases/tag/v1.1.0
 [1.0.0]: https://github.com/XION-HN/haisa-dev/releases/tag/v1.0.0
