@@ -1,6 +1,5 @@
 package com.haisa.sdk.engine
 
-import android.util.Log
 import com.haisa.sdk.model.BuildProgress
 import com.haisa.sdk.model.BuildStatus
 import com.haisa.sdk.util.EnvironmentInjector
@@ -16,6 +15,11 @@ class BuildEngine {
 
     companion object {
         private const val TAG = "BuildEngine"
+
+        internal var logError: (String, String, Throwable?) -> Unit = { tag, msg, e ->
+            val log = if (e != null) "$tag: $msg - ${e.message}" else "$tag: $msg"
+            System.err.println(log)
+        }
     }
 
     fun execute(
@@ -74,7 +78,7 @@ class BuildEngine {
             errorReader.close()
             process.destroy()
         } catch (e: Exception) {
-            try { Log.e(TAG, "Build execution failed", e) } catch (_: Throwable) {}
+            logError(TAG, "Build execution failed", e)
             emit(BuildProgress(BuildStatus.FAILED, "Build error: ${e.message}", isError = true))
         }
     }.flowOn(Dispatchers.IO)

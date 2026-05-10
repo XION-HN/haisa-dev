@@ -13,9 +13,11 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.junit.MockitoJUnitRunner
-import retrofit2.Response
+import org.mockito.junit.MockitoSettings
+import org.mockito.quality.Strictness
 
 @RunWith(MockitoJUnitRunner::class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ModuleRepositoryTest {
 
     @Mock
