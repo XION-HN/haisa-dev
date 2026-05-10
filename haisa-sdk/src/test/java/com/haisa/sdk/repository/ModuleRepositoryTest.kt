@@ -3,8 +3,6 @@ package com.haisa.sdk.repository
 import com.haisa.sdk.data.LocalDataSource
 import com.haisa.sdk.model.InstalledModule
 import com.haisa.sdk.network.GitHubReleasesSource
-import com.haisa.sdk.network.RepoIndex
-import com.haisa.sdk.network.RepoModuleEntry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -13,11 +11,8 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.junit.MockitoJUnitRunner
-import org.mockito.junit.MockitoSettings
-import org.mockito.quality.Strictness
 
-@RunWith(MockitoJUnitRunner::class)
-@MockitoSettings(strictness = Strictness.LENIENT)
+@RunWith(MockitoJUnitRunner.Silent::class)
 class ModuleRepositoryTest {
 
     @Mock
