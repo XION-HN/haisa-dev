@@ -1,176 +1,285 @@
-# Haisa Dev 详细开发计划流程表
+# Haisa Des 开发计划
 
-> 版本: v1.2
-> 日期: 2026-05-10
-> 状态: 🚧 开发中
-
----
-
-## 阶段一：基础设施搭建 (第 1-2 周) — ✅ 基本完成
-
-### Week 1: 项目初始化与架构搭建
-
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 1.1 | GitHub 仓库创建与 CI/CD 配置 | DevOps | 4h | - | ✅ 已完成 |
-| 1.2 | 本地开发环境配置（Android Studio, NDK） | Android 组 | 8h | - | ✅ 已完成 |
-| 1.3 | 项目模块化 Gradle 配置 | Android 组 | 4h | 1.2 | ✅ 已完成 |
-| 1.4 | MVC 架构基础代码骨架搭建 | Android 组 | 12h | 1.3 | ✅ 已完成 |
-| 1.5 | Android-Terminal-Emulator 源码导入与适配 | 终端组 | 16h | 1.2 | ✅ 已完成 |
-| 1.6 | 基础 Theme 与 UI 组件库搭建 | UI 组 | 8h | 1.2 | ✅ 已完成 |
-
-### Week 2: 核心数据层与网络层
-
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 2.1 | `ModuleConfig` 数据模型定义 | Android 组 | 4h | 1.4 | ✅ 已完成 |
-| 2.2 | `ModuleRepository` 接口与实现 | Android 组 | 8h | 2.1 | ✅ 已完成 |
-| 2.3 | GitHub Releases API 封装与数据解析 | Android 组 | 8h | 2.1 | ✅ 已完成 |
-| 2.4 | 模块下载服务 (OkHttp + ZIP解压 + 进度回调) | Android 组 | 12h | 2.3 | ✅ 已完成 |
-| 2.5 | 本地模块存储结构与版本管理 | Android 组 | 8h | 1.4 | ✅ 已完成 |
-| 2.6 | 单元测试：数据层与网络层 | QA 组 | 8h | 2.1-2.5 | ✅ 已完成 |
-
-**里程碑 1**: ✅ 基础架构完成，模块下载与本地管理可用
+> 版本: v2.0
+> 日期: 2026-05-11
+> 定位: 纯伪 Linux 库（非应用），供第三方 Android IDE 集成
 
 ---
 
-## 阶段二：终端模拟器集成 (第 3-4 周) — ✅ 基本完成
+## 项目定位变更说明
 
-### Week 3: Android-Terminal-Emulator 核心集成
+Haisa Des 已从独立 Android 应用转变为**纯库项目**：
 
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 3.1 | 源码分析与架构理解 | 终端组 | 8h | - | ✅ 已完成 |
-| 3.2 | `TerminalSession` 封装与生命周期管理 | 终端组 | 12h | 3.1 | ✅ 已完成 |
-| 3.3 | `TerminalActivity` UI 集成 | 终端组 | 16h | 3.2 | ✅ 已完成 |
-| 3.4 | JNI 原生库实现 (CMakeLists + termexec.c) | 终端组 | 8h | 3.1 | ✅ 已完成 |
-| 3.5 | PTY 管理 (ParcelFileDescriptorCompat) | 终端组 | 12h | 3.4 | ✅ 已完成 |
-| 3.6 | 环境变量注入与 Shell 启动适配 | 终端组 | 12h | 2.5 | ✅ 已完成 |
-
-### Week 4: 终端功能完善与性能优化
-
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 4.1 | 终端主题与字体配置 (支持自定义) | UI 组 | 8h | 3.3 | ⏳ 未开始 |
-| 4.2 | 键盘快捷键映射 (Ctrl, Alt, Esc, Tab) | 终端组 | 8h | 3.3 | ⏳ 未开始 |
-| 4.3 | 终端性能优化 (渲染/内存/启动速度) | 终端组 | 16h | 3.3 | ⏳ 未开始 |
-| 4.4 | 终端会话持久化 (恢复/后台保活) | 终端组 | 8h | 3.2 | ⏳ 未开始 |
-| 4.5 | 单元测试：终端组件 | QA 组 | 8h | 3.1-3.4 | ⏳ 未开始 |
-
-**里程碑 2**: ✅ 终端模拟器集成完成，可运行基础 Shell 命令
+- **App 模块**已改为 `com.android.library`，无启动 Activity
+- **模块商店 UI** 已全部删除，所有功能通过 SDK API 暴露
+- **包管理器**（`com.haisa.sdk.pkg`）替代旧的 ModuleManager/ModuleRepository 层
+- **IDE 集成 API** 新增语言 SDK 信息暴露和语法补全上下文解析
 
 ---
 
-## 阶段三：模块商店与 IDE 集成 (第 5-7 周) — 🔄 进行中
+## 已完成工作
 
-### Week 5: 模块商店 UI 开发
+### 阶段一：项目重命名与 GPL 清除
 
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 5.1 | `ModuleStoreFragment` 界面设计 (列表/详情/搜索) | UI 组 | 12h | 1.6 | ✅ 已完成 |
-| 5.2 | 模块列表适配器与异步加载 | UI 组 | 8h | 5.1 | ✅ 已完成 |
-| 5.3 | 模块详情页与依赖展示 | UI 组 | 8h | 5.2 | ✅ 已完成 |
-| 5.4 | 下载进度 UI 与通知 | UI 组 | 8h | 5.2 | ✅ 已完成 (基础版) |
-| 5.5 | 模块安装向导 (依赖树可视化) | UI 组 | 8h | 5.3 | ✅ 已完成 (基础版-依赖列表展示) |
+| 任务 | 状态 |
+| :--- | :--- |
+| haisa-dev → haisa-des 全面重命名（28+文件） | ✅ |
+| `com.haisa.dev` → `com.haisa.des` 包名迁移 | ✅ |
+| `HaisaDev` → `HaisaDes` 类名迁移 | ✅ |
+| jackpal-termexec2 → haisa-termexec (CMakeLists+Java) | ✅ |
+| `jackpal.androidterm` → `com.haisa.terminal` (AIDL+Java) | ✅ |
+| 零残留验证：`grep -rn "haisa-dev\|jackpal"` 返回空 | ✅ |
 
-### Week 6: 环境注入与构建引擎
+### 阶段二：安全加固
 
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 6.1 | `EnvironmentService` 环境注入服务 | Android 组 | 12h | 2.5 | ✅ 已完成 |
-| 6.2 | Manifest 环境模板 (`{{install_dir}}`) 应用 | Android 组 | 8h | 6.1 | ✅ 已完成 |
-| 6.3 | `BuildEngine` 构建引擎 | Android 组 | 16h | 6.2 | ✅ 已完成 |
-| 6.4 | 构建任务队列与异步执行 | Android 组 | 8h | 6.3 | ✅ 已完成 |
-| 6.5 | 构建日志实时回显与错误解析 | Android 组 | 8h | 6.3 | ✅ 已完成 (基础版) |
+| 任务 | 状态 |
+| :--- | :--- |
+| BuildEngine `sanitizeCommand()` 防命令注入 | ✅ |
+| 路径白名单：`/data/data/` `/sdcard/` `/storage/` | ✅ |
+| 30分钟进程超时 + `destroyForcibly()` | ✅ |
+| ModuleRepository zip-slip 修复（canonical path + `..` 拒绝） | ✅ |
+| 256MB 条目大小限制 | ✅ |
+| OkHttp response body 关闭（finally 块） | ✅ |
+| 3次重试 + 指数退避 + SHA-256 校验 | ✅ |
+| BuildTaskQueue 竞态条件修复（Mutex + synchronized） | ✅ |
 
-### Week 7: 项目模板与 IDE 集成
+### 阶段三：架构重构
 
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 7.1 | `haisa-config.json` 项目配置文件生成 | Android 组 | 4h | - | ✅ 已完成 |
-| 7.2 | 项目模板系统 (7种语言) | Android 组 | 12h | 7.1 | ✅ 已完成 |
-| 7.3 | IDE 插件 API 设计与实现 (`haisa-sdk`) | Android 组 | 16h | 7.2 | ✅ 已完成 |
-| 7.4 | Haisa IDE 集成测试 | Android 组 | 8h | 7.3 | ⏳ 未开始 |
+| 任务 | 状态 |
+| :--- | :--- |
+| App 模块 → `com.android.library` | ✅ |
+| 删除启动 Activity intent-filter | ✅ |
+| 删除模块商店所有 Fragment/Adapter/Layout | ✅ |
+| HaisaEnvironment context 泄漏修复 | ✅ |
+| `createProject()` 改为 `suspend fun` | ✅ |
+| `validateModuleId()` + `validateProjectName()` | ✅ |
+| ParcelFileDescriptorCompat RandomAccessFile 泄漏修复 | ✅ |
+| TerminalActivity `@Volatile processId` + PFD close | ✅ |
 
-**里程碑 3**: ✅ 模块商店基础功能可用，项目模板可用，IDE 插件 API 已完成
+### 阶段四：包管理器
 
----
+| 任务 | 状态 |
+| :--- | :--- |
+| PackageModels.kt 数据模型 | ✅ |
+| PackageDatabase.kt 安装状态数据库 | ✅ |
+| DependencyResolver.kt 拓扑排序 + 环检测 | ✅ |
+| PackageManager.kt 核心（install/remove/autoremove） | ✅ |
+| HaisaEnvironment 集成 PackageManager | ✅ |
+| 旧 ModuleManager/ModuleRepository 已弃用（死代码） | ✅ |
+| GitHubReleasesSource 支持 v2.0 repo-index.json | ✅ |
+| `refreshPackageIndex()` 远程索引拉取 | ✅ |
 
-## 阶段四：多语言模块构建与发布 (第 8-10 周)
+### 阶段五：模块定义
 
-### Week 8-9: 模块构建流水线
+| 模块 | 版本 | 状态 |
+| :--- | :--- | :--- |
+| env-base | 1.0.0 | ✅ |
+| env-cc (Clang/LLVM) | 17.0.1 | ✅ |
+| env-git | 2.43.0 | ✅ |
+| env-jdk (OpenJDK 17) | 17.0.8 | ✅ |
+| env-node (Node.js 20 LTS) | 20.11.0 | ✅ |
+| env-python (3.11) | 3.11.8 | ✅ |
+| env-rust (1.75) | 1.75.0 | ✅ |
+| env-go (1.21) | 1.21.6 | ✅ |
 
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 8.1 | GitHub Actions `build-modules.yml` 完善 | DevOps | 16h | 1.1 | ✅ 已完成 (CI修复) |
-| 8.2 | `env-base` 基础模块构建 | DevOps | 8h | 8.1 | ⏳ 未开始 |
-| 8.3 | `env-jdk` (OpenJDK 17/21) 模块构建 | DevOps | 24h | 8.2 | ⏳ 未开始 |
-| 8.4 | `env-python` (3.11) 模块构建 | DevOps | 16h | 8.2 | ⏳ 未开始 |
-| 8.5 | `env-cc` (Clang/LLVM) 模块构建 | DevOps | 24h | 8.2 | ⏳ 未开始 |
-| 8.6 | `env-node` (LTS) 模块构建 | DevOps | 16h | 8.2 | ⏳ 未开始 |
-| 8.7 | `env-git` 模块构建 | DevOps | 8h | 8.2 | ⏳ 未开始 |
+### 阶段六：IDE 集成 API
 
-### Week 10: 模块测试与发布
-
-| 序号 | 任务 | 负责人 | 预计工时 | 依赖 | 状态 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| 9.1 | 各模块安装测试 (真机/模拟器) | QA 组 | 16h | 8.2-8.7 | ⏳ 未开始 |
-| 9.2 | Module Index (`repo-index.json`) 自动生成 | DevOps | 8h | 8.1 | ✅ 已完成 |
-| 9.3 | GitHub Pages 托管 Module Index | DevOps | 4h | 9.2 | ⏳ 未开始 |
-| 9.4 | 初始 v1.0 模块集发布到 Releases | DevOps | 4h | 9.1 | ⏳ 未开始 |
-
-**里程碑 4**: ⏳ v1.0 多语言模块集全部可用
-
----
-
-## 阶段五：测试与优化 (第 11-12 周)
-
-| 序号 | 任务 | 负责人 | 预计工时 | 状态 |
-| :--- | :--- | :--- | :--- | :--- |
-| 10.1 | 单元测试覆盖率提升至 80% | QA 组 | 24h | 🔄 进行中 (约65%) |
-| 10.2 | 集成测试：端到端安装流程 | QA 组 | 16h | ⏳ 未开始 |
-| 10.3 | 性能测试与内存优化 | Android 组 | 24h | ⏳ 未开始 |
-| 10.4 | UI 自动化测试 (Espresso) | QA 组 | 16h | ⏳ 未开始 |
-| 10.5 | 文档完善与 API 手册 | 文档组 | 16h | ⏳ 未开始 |
-
-**里程碑 5**: ⏳ 测试通过，代码质量达标
-
----
-
-## 阶段六：正式发布与集成 (第 13 周+ )
-
-| 序号 | 任务 | 负责人 | 预计工时 | 状态 |
-| :--- | :--- | :--- | :--- | :--- |
-| 11.1 | v1.0 Release 发布 | DevOps | 4h | ⏳ 未开始 |
-| 11.2 | JitPack/Maven Central 发布 SDK | DevOps | 8h | ⏳ 未开始 |
-| 11.3 | 集成到 Haisa IDE 主应用 | Android 组 | 16h | ⏳ 未开始 |
-| 11.4 | 集成到其他项目方案实施 | Android 组 | 24h | ⏳ 未开始 |
-| 11.5 | 社区文档与教程 | 文档组 | 16h | ⏳ 未开始 |
-
-**里程碑 6**: ⏳ v1.0 正式发布，SDK 可用于第三方集成
+| 任务 | 状态 |
+| :--- | :--- |
+| `LanguageSdkInfo` 数据类（语言→包→SDK信息） | ✅ |
+| `CompletionContext` 数据类（语言+SDK+include路径+环境） | ✅ |
+| `getLanguageSdk(languageId)` 按语言查 SDK | ✅ |
+| `getLanguageSdks()` 列出所有已安装 SDK | ✅ |
+| `resolveCompletionContext(filePath, moduleIds)` 补全上下文 | ✅ |
+| 语言映射：Java/Kotlin/Python/JS/TS/C/C++/Rust/Go | ✅ |
+| 文件扩展名→语言自动推断 | ✅ |
 
 ---
 
-## 甘特图概览
+## 待完成工作
+
+### 阶段七：模块构建流水线
+
+| 序号 | 任务 | 优先级 | 状态 |
+| :--- | :--- | :--- | :--- |
+| 7.1 | GitHub Actions `build-modules.yml` 完善 | 高 | ✅ CI修复 |
+| 7.2 | env-base 基础模块编译 (sh, busybox, libc) | 高 | ⏳ |
+| 7.3 | env-cc Clang/LLVM 交叉编译 | 高 | ⏳ |
+| 7.4 | env-jdk OpenJDK 17 移植 | 高 | ⏳ |
+| 7.5 | env-python 3.11 编译 | 高 | ⏳ |
+| 7.6 | env-node Node.js 20 编译 | 中 | ⏳ |
+| 7.7 | env-git 编译 | 中 | ⏳ |
+| 7.8 | env-rust 1.75 编译 | 中 | ⏳ |
+| 7.9 | env-go 1.21 编译 | 中 | ⏳ |
+| 7.10 | GitHub Pages 托管 repo-index.json | 中 | ⏳ |
+| 7.11 | SHA-256 校验和生成与填充 | 高 | ⏳ |
+
+### 阶段八：SDK 完善
+
+| 序号 | 任务 | 优先级 | 状态 |
+| :--- | :--- | :--- | :--- |
+| 8.1 | PackageManager 升级逻辑（版本比较 + 下载替换） | 高 | ⏳ |
+| 8.2 | 多架构支持（arm64-v8a, armeabi-v7a, x86_64） | 中 | ⏳ |
+| 8.3 | 包冲突检测（`conflicts` 字段） | 中 | ⏳ |
+| 8.4 | 离线安装支持（从本地 ZIP 安装） | 中 | ⏳ |
+| 8.5 | 包签名验证（除 SHA-256 外） | 低 | ⏳ |
+| 8.6 | 清理死代码（ModuleManager/ModuleRepository/LocalDataSource） | 中 | ⏳ |
+
+### 阶段九：IDE 集成增强
+
+| 序号 | 任务 | 优先级 | 状态 |
+| :--- | :--- | :--- | :--- |
+| 9.1 | 依赖补全（package.json/requirements.txt/Cargo.toml → 可用包列表） | 高 | ⏳ |
+| 9.2 | 项目分析 API（语言检测 + 依赖扫描 + 构建工具识别） | 高 | ⏳ |
+| 9.3 | LSP 协议适配层（gopls/rust-analyzer/clangd） | 中 | ⏳ |
+| 9.4 | 调试支持 API（JDB/gdb/lldb 进程管理） | 低 | ⏳ |
+
+### 阶段十：发布
+
+| 序号 | 任务 | 优先级 | 状态 |
+| :--- | :--- | :--- | :--- |
+| 10.1 | v1.0 Release | 高 | ⏳ |
+| 10.2 | JitPack/Maven Central SDK 发布 | 高 | ⏳ |
+| 10.3 | API 文档（KDoc + 示例代码） | 中 | ⏳ |
+| 10.4 | 集成指南（Haisa IDE + 第三方 IDE） | 中 | ⏳ |
+
+---
+
+## 架构概览
 
 ```
-Week: 1 2 3 4 5 6 7 8 9 10 11 12 13+
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-阶段一: 基础架构搭建 ■■■■■■■■ ✅
-阶段二: 终端集成 ■■■■■■■■ ✅ (Week 4 部分待完善)
-阶段三: 商店与IDE ■■■■■■■■ ✅
-阶段四: 模块构建发布 ■■■■■■■■
-阶段五: 测试优化 ■■■■■■
-阶段六: 发布集成 ■■■■■■
+┌──────────────────────────────────────────────┐
+│            第三方 Android IDE 应用              │
+│  (通过 HaisaIdeApi 接口集成)                    │
+└───────────────┬──────────────────────────────┘
+                │
+┌───────────────▼──────────────────────────────┐
+│              haisa-sdk (AAR 库)                │
+│                                               │
+│  ┌─────────────┐  ┌──────────────────────┐   │
+│  │ HaisaIdeApi │  │  HaisaEnvironment    │   │
+│  │ (接口层)     │──│  (门面/协调层)        │   │
+│  └─────────────┘  └───┬──────────────────┘   │
+│                       │                       │
+│  ┌────────────────────▼──────────────────┐   │
+│  │          PackageManager               │   │
+│  │  ┌───────────┐ ┌────────────────────┐ │   │
+│  │  │ PkgDatabase│ │ DependencyResolver │ │   │
+│  │  └───────────┘ └────────────────────┘ │   │
+│  └───────────────────────────────────────┘   │
+│                                               │
+│  ┌──────────────┐  ┌───────────────────┐     │
+│  │ BuildEngine  │  │ EnvironmentInjector│     │
+│  └──────────────┘  └───────────────────┘     │
+│                                               │
+│  ┌──────────────────────────────────────┐    │
+│  │      terminal-emulator (AAR)         │    │
+│  │  ITerminal.aidl / haisa-termexec.so  │    │
+│  └──────────────────────────────────────┘    │
+└──────────────────────────────────────────────┘
 ```
+
+---
+
+## 包管理器架构
+
+```
+PackageManager
+  ├── updateIndex(packages)       → 更新可用包索引缓存
+  ├── search(query)               → 按 pkgId/name/description 搜索
+  ├── show(pkgId)                 → 查看包详情
+  ├── install(pkgId, version?)    → 安装（含依赖解析 + 下载 + 解压 + 校验）
+  ├── remove(pkgId, purge?)       → 移除（含反向依赖检查）
+  ├── autoremove()                → 清理孤立的自动安装依赖
+  ├── getEnvironment(pkgId)       → 获取已安装包的环境变量
+  ├── injectEnvironments(pkgIds)  → 合并多个包的环境变量
+  ├── getEntryBinaries(pkgId)     → 获取可执行文件绝对路径
+  ├── getIdeIntegrations(pkgId)   → 获取 IDE 任务列表
+  └── getInstalledVersion(pkgId)  → 获取已安装版本号
+
+DependencyResolver
+  ├── resolve(target, available, installed) → 拓扑排序 + 环检测
+  └── findOrphans(installed, autoFlags)     → 孤立依赖发现
+
+PackageDatabase (SharedPreferences)
+  ├── 安装状态持久化
+  ├── 自动安装标记
+  └── 文件列表记录
+```
+
+---
+
+## IDE 集成 API
+
+```kotlin
+interface HaisaIdeApi {
+    // 模块管理
+    suspend fun getAvailableModules(): List<ModuleInfo>
+    fun installModule(moduleId, version?): Flow<InstallProgress>
+    fun uninstallModule(moduleId, version?): Boolean
+    fun isModuleInstalled(moduleId): Boolean
+    fun getModuleEnvironment(moduleId): Map<String, String>
+
+    // 构建
+    fun executeBuild(projectPath, buildCommand, moduleIds): Flow<BuildProgress>
+
+    // 项目
+    suspend fun createProject(projectName, template, outputDir): Result<ProjectConfig>
+
+    // 终端
+    fun openTerminal(moduleIds): TerminalSession
+
+    // 语言 SDK（新增）
+    fun getLanguageSdk(languageId): LanguageSdkInfo?
+    fun getLanguageSdks(): List<LanguageSdkInfo>
+
+    // 语法补全上下文（新增）
+    fun resolveCompletionContext(filePath, moduleIds): CompletionContext
+}
+
+data class LanguageSdkInfo(
+    val languageId: String,       // "python", "rust", "go", ...
+    val packageName: String,      // "env-python", "env-rust", ...
+    val version: String,          // "3.11.8"
+    val homeDir: String,          // SDK 安装根目录
+    val binaryPaths: Map<String, String>,  // 工具名 → 绝对路径
+    val includePaths: List<String>,        // 头文件/源码搜索路径
+    val libraryPaths: List<String>,        // 库搜索路径
+    val envVars: Map<String, String>,      // 完整环境变量
+    val ideTasks: List<String>             // 可用 IDE 任务
+)
+
+data class CompletionContext(
+    val languageId: String,
+    val sdkInfo: LanguageSdkInfo?,
+    val additionalIncludePaths: List<String>,
+    val environment: Map<String, String>
+)
+```
+
+---
+
+## 支持的语言映射
+
+| 语言 | 语言ID | 包名 | 入口二进制 | IDE 任务 |
+| :--- | :--- | :--- | :--- | :--- |
+| Java | java | env-jdk | java, javac, jar, javadoc, jdb | java-compile/run/debug/javadoc |
+| Kotlin | kotlin | env-jdk | java, javac | java-compile/run/debug |
+| Python | python | env-python | python3, pip3 | python-run, pip-install/freeze, venv-create |
+| JavaScript | javascript | env-node | node, npm, npx | node-run, npm-install/run-script/test |
+| TypeScript | typescript | env-node | node, npm, npx, tsc | node-run, npm-install/run-script/test |
+| C | c | env-cc | clang, clang++, ar, nm, objdump, strip | c-compile, c++-compile, cmake-build, make-build |
+| C++ | cpp | env-cc | clang, clang++ | c++-compile, cmake-build, make-build |
+| Rust | rust | env-rust | rustc, cargo, rustfmt, clippy-driver | cargo-build/run/test/doc/fmt/clippy |
+| Go | go | env-go | go, gofmt, goimports, gopls | go-build/run/test/mod-tidy/mod-download/fmt/vet |
 
 ---
 
 ## 风险与应对
 
-| 风险 | 影响 | 应对策略 |
+| 风险 | 影响 | 应对 |
 | :--- | :--- | :--- |
-| Android-Terminal-Emulator 源码兼容性问题 | 高 | ✅ 已解决: 包重命名完成，JNI库已实现 |
-| GitHub API 速率限制 | 中 | 使用 CDN 缓存，本地 repo-index.json |
-| 模块体积过大下载慢 | 中 | ✅ 已实现: ZIP格式 + 实时进度回调 |
-| NDK 交叉编译失败 | 高 | ✅ 已解决: CMakeLists.txt + termexec.c 原生实现 |
+| 模块二进制交叉编译失败 | 高 | 使用 GitHub Actions 多阶段构建 + NDK 工具链 |
+| GPL 许可证污染 | 高 | ✅ 已完成 jackpal 清除；Git 使用 GPL-2.0 但仅作为可选包 |
+| 仓库体积膨胀 | 中 | 模块包托管在 GitHub Releases，不在仓库内 |
+| 本地构建不可用 | 中 | ✅ 依赖 GitHub Actions CI；本地仅做代码编辑 |

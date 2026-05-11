@@ -4,71 +4,120 @@ import android.content.Context
 import com.haisa.sdk.engine.BuildEngine
 import com.haisa.sdk.model.BuildProgress
 import com.haisa.sdk.model.InstallProgress
-import com.haisa.sdk.model.InstalledModule
 import com.haisa.sdk.model.ModuleInfo
 import com.haisa.sdk.model.ProjectConfig
 import com.haisa.sdk.model.ProjectTemplate
-import com.haisa.sdk.service.ModuleManager
+import com.haisa.sdk.pkg.PackageInfo
+import com.haisa.sdk.pkg.PackageManager
+import com.haisa.sdk.pkg.PackageModels.PackageIndex
+import com.haisa.sdk.network.GitHubReleasesSource
+import com.haisa.sdk.service.NetworkProvider
 import com.haisa.sdk.util.EnvironmentInjector
+import com.haisa.sdk.util.PathResolver
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.io.File
 
-class HaisaEnvironment private constructor(context: Context) {
+class HaisaEnvironment private constructor(appContext: Context) {
 
-    private val appContext = context.applicationContext
-    private val moduleManager: ModuleManager = ModuleManager.getInstance(appContext)
+    private val appContext: Context = appContext.applicationContext
+    private val packageManager: PackageManager = PackageManager(appContext)
     private val buildEngine: BuildEngine = BuildEngine()
+    private val remoteSource = GitHubReleasesSource(NetworkProvider.provideApiService())
 
     companion object {
         @Volatile
         private var instance: HaisaEnvironment? = null
 
+        private val VALID_MODULE_ID_REGEX = Regex("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
+        private val VALID_PROJECT_NAME_REGEX = Regex("^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$")
+        private const val MAX_PROJECT_NAME_LENGTH = 128
+
         @JvmStatic
         fun getInstance(context: Context): HaisaEnvironment {
             return instance ?: synchronized(this) {
-                instance ?: HaisaEnvironment(context).also { instance = it }
+                instance ?: HaisaEnvironment(context.applicationContext).also { instance = it }
             }
         }
 
         @JvmStatic
         fun resetInstance() {
             instance = null
-            ModuleManager.resetInstance()
         }
     }
 
+    fun getPackageManager(): PackageManager = packageManager
+
     suspend fun getAvailableModules(): List<ModuleInfo> {
-        return moduleManager.fetchAvailableModules()
+        val available = packageManager.listAvailable()
+        val installed = packageManager.listInstalled().associateBy { it.pkgId }
+        return available.map { pkg ->
+            ModuleInfo(
+                id = pkg.pkgId,
+                name = pkg.name,
+                version = pkg.version,
+                description = pkg.description,
+                sizeInMB = (pkg.installSizeKb / 1024).toInt().coerceAtLeast(1),
+                dependencies = pkg.dependencies,
+                isInstalled = installed.containsKey(pkg.pkgId),
+                installedVersion = installed[pkg.pkgId]?.version,
+                downloadUrl = pkg.downloadUrl,
+                sha256 = pkg.sha256
+            )
+        }
     }
 
-    fun getInstalledModules(): List<InstalledModule> {
-        return moduleManager.getInstalledModules()
+    fun getInstalledModules(): List<ModuleInfo> {
+        return packageManager.listInstalled().map { installed ->
+            val pkgInfo = packageManager.show(installed.pkgId)
+            ModuleInfo(
+                id = installed.pkgId,
+                name = pkgInfo?.name ?: installed.pkgId.removePrefix("env-").uppercase(),
+                version = installed.version,
+                description = pkgInfo?.description ?: "Installed package",
+                sizeInMB = (installed.installSizeKb / 1024).toInt().coerceAtLeast(1),
+                dependencies = pkgInfo?.dependencies ?: emptyList(),
+                isInstalled = true,
+                installedVersion = installed.version
+            )
+        }
     }
 
     fun installModule(moduleId: String, version: String? = null): Flow<InstallProgress> {
-        return moduleManager.installModule(moduleId, version)
+        validateModuleId(moduleId)
+        return packageManager.install(moduleId, version)
     }
 
     fun switchModuleVersion(moduleId: String, version: String): Boolean {
-        return moduleManager.switchVersion(moduleId, version)
+        validateModuleId(moduleId)
+        return packageManager.getInstalledVersion(moduleId) != null
+    }
+
+    fun uninstallModule(moduleId: String, version: String? = null): Boolean {
+        validateModuleId(moduleId)
+        val result = packageManager.remove(moduleId, purge = true)
+        return result.isSuccess
     }
 
     fun isModuleInstalled(moduleId: String): Boolean {
-        return moduleManager.isInstalled(moduleId)
+        return packageManager.isInstalled(moduleId)
     }
 
     fun isEnvironmentReady(moduleId: String): Boolean {
-        return moduleManager.isEnvironmentReady(moduleId)
+        if (!packageManager.isInstalled(moduleId)) return false
+        val env = packageManager.getEnvironment(moduleId)
+        return env.containsKey("PATH")
     }
 
     fun getModuleEnvironment(moduleId: String): Map<String, String> {
-        return moduleManager.getEnvironment(moduleId)
+        return packageManager.getEnvironment(moduleId)
     }
 
     fun injectEnvironment(moduleIds: List<String>): Map<String, String> {
-        val envs = moduleIds.map { moduleManager.getEnvironment(it) }
-        return EnvironmentInjector.inject(envs)
+        moduleIds.forEach { validateModuleId(it) }
+        return packageManager.injectEnvironments(moduleIds)
     }
 
     fun executeBuild(
@@ -76,17 +125,30 @@ class HaisaEnvironment private constructor(context: Context) {
         buildCommand: String,
         moduleIds: List<String> = emptyList()
     ): Flow<BuildProgress> {
-        val moduleEnvs = moduleIds.map { moduleManager.getEnvironment(it) }
+        moduleIds.forEach { validateModuleId(it) }
+        val moduleEnvs = moduleIds.map { packageManager.getEnvironment(it) }
         return buildEngine.execute(projectPath, buildCommand, moduleEnvs)
     }
 
-    fun createProject(
+    suspend fun createProject(
         projectName: String,
         template: ProjectTemplate,
         outputDir: String
-    ): Result<ProjectConfig> {
-        return try {
-            val requiredModules = com.haisa.sdk.util.PathResolver.resolveModuleId(template.name)
+    ): Result<ProjectConfig> = withContext(Dispatchers.IO) {
+        validateProjectName(projectName)
+
+        val outputDirFile = File(outputDir)
+        if (!outputDirFile.exists() || !outputDirFile.isDirectory) {
+            return@withContext Result.failure(IllegalArgumentException("Output directory does not exist: $outputDir"))
+        }
+
+        val canonicalOutput = outputDirFile.canonicalPath
+        if (!canonicalOutput.startsWith("/data/data/") && !canonicalOutput.startsWith("/sdcard/") && !canonicalOutput.startsWith("/storage/")) {
+            return@withContext Result.failure(IllegalArgumentException("Output directory not in allowed paths: $canonicalOutput"))
+        }
+
+        try {
+            val requiredModules = PathResolver.resolveModuleId(template.name)
             val buildTool = when (template) {
                 ProjectTemplate.ANDROID_JAVA, ProjectTemplate.ANDROID_KOTLIN -> "gradle"
                 ProjectTemplate.PYTHON -> "pip"
@@ -97,6 +159,9 @@ class HaisaEnvironment private constructor(context: Context) {
             }
 
             val projectDir = File("$outputDir/$projectName")
+            if (projectDir.exists()) {
+                return@withContext Result.failure(IllegalArgumentException("Project directory already exists: ${projectDir.absolutePath}"))
+            }
             projectDir.mkdirs()
 
             val srcDir = File(projectDir, "src")
@@ -106,7 +171,6 @@ class HaisaEnvironment private constructor(context: Context) {
                 ProjectTemplate.PYTHON -> {
                     File(srcDir, "main.py").writeText(generatePythonTemplate(projectName))
                     File(projectDir, "requirements.txt").writeText("")
-                    File(projectDir, "README.md").writeText("# $projectName\n\nPython project created by Haisa Dev.\n")
                 }
                 ProjectTemplate.NODE_JS -> {
                     File(srcDir, "index.js").writeText(generateNodeTemplate(projectName))
@@ -149,9 +213,43 @@ class HaisaEnvironment private constructor(context: Context) {
         }
     }
 
+    fun updatePackageIndex(packages: List<PackageInfo>): Int {
+        return packageManager.updateIndex(packages)
+    }
+
+    fun searchPackages(query: String): List<PackageInfo> {
+        return packageManager.search(query).matches
+    }
+
+    suspend fun refreshPackageIndex(): Result<Int> {
+        val result = remoteSource.fetchPackageIndex()
+        if (result.isFailure) return Result.failure(result.exceptionOrNull() ?: Exception("Unknown error"))
+        val packages = result.getOrThrow()
+        val count = packageManager.updateIndex(packages)
+        return Result.success(count)
+    }
+
+    private fun validateModuleId(moduleId: String) {
+        require(moduleId.matches(VALID_MODULE_ID_REGEX)) {
+            "Invalid module ID: $moduleId"
+        }
+    }
+
+    private fun validateProjectName(projectName: String) {
+        require(projectName.length <= MAX_PROJECT_NAME_LENGTH) {
+            "Project name too long (max $MAX_PROJECT_NAME_LENGTH chars)"
+        }
+        require(projectName.matches(VALID_PROJECT_NAME_REGEX)) {
+            "Invalid project name: $projectName"
+        }
+        require(!projectName.contains("..")) {
+            "Project name must not contain path traversal sequences"
+        }
+    }
+
     private fun generatePythonTemplate(name: String): String {
         return "#!/usr/bin/env python3\n" +
-            "# $name - Created by Haisa Dev\n\n" +
+            "# $name - Created by Haisa Des\n\n" +
             "def main():\n" +
             "    print(\"Hello from $name!\")\n\n" +
             "if __name__ == \"__main__\":\n" +
@@ -162,11 +260,11 @@ class HaisaEnvironment private constructor(context: Context) {
         return "const http = require('http');\n\n" +
             "const port = 3000;\n\n" +
             "const server = http.createServer((req, res) => {\n" +
-            "  res.writeHead(200, { 'Content-Type': 'text/plain' });\n" +
-            "  res.end('Hello from $name!');\n" +
+            "    res.writeHead(200, { 'Content-Type': 'text/plain' });\n" +
+            "    res.end('Hello from $name!');\n" +
             "});\n\n" +
             "server.listen(port, () => {\n" +
-            "  console.log('Server running at http://localhost:' + port + '/');\n" +
+            "    console.log('Server running at http://localhost:' + port + '/');\n" +
             "});\n"
     }
 
@@ -232,7 +330,7 @@ class HaisaEnvironment private constructor(context: Context) {
 
     private fun generateRustTemplate(): String {
         return "fn main() {\n" +
-            "    println!(\"Hello from Haisa Dev!\");\n" +
+            "    println!(\"Hello from Haisa Des!\");\n" +
             "}\n"
     }
 

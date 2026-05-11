@@ -1,4 +1,4 @@
-# Haisa Dev 集成到其他项目的详细方案
+# Haisa Des 集成到其他项目的详细方案
 
 > 版本: v1.0  
 > 日期: 2026-05-09
@@ -19,10 +19,10 @@ repositories {
 
 dependencies {
     // 核心 SDK (必需)
-    implementation 'com.github.haisa-dev:haisa-sdk:v1.0.0'
-    
-    // 可选：终端视图组件 (如果不想使用默认终端)
-    implementation 'com.github.haisa-dev:haisa-terminal:v1.0.0'
+implementation 'com.github.haisa-des:haisa-sdk:v1.0.0'
+
+// 可选：终端视图组件 (如果不想使用默认终端)
+implementation 'com.github.haisa-des:haisa-terminal:v1.0.0'
 }
 ```
 
@@ -33,8 +33,8 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.haisa-dev:haisa-sdk:v1.0.0")
-    implementation("com.github.haisa-dev:haisa-terminal:v1.0.0")
+implementation("com.github.haisa-des:haisa-sdk:v1.0.0")
+implementation("com.github.haisa-des:haisa-terminal:v1.0.0")
 }
 ```
 
@@ -182,7 +182,7 @@ class NewProjectActivity : AppCompatActivity() {
 
 从 GitHub Releases 下载最新 AAR：
 ```bash
-wget https://github.com/haisa-dev/haisa-dev/releases/download/v1.0.0/haisa-sdk-v1.0.0.aar
+wget https://github.com/haisa-des/haisa-des/releases/download/v1.0.0/haisa-sdk-v1.0.0.aar
 ```
 
 ### 2.2 放入项目
@@ -223,7 +223,7 @@ dependencies {
 
 ```bash
 # 在你的项目根目录
-git clone https://github.com/haisa-dev/haisa-dev.git temp-haisa
+git clone https://github.com/haisa-des/haisa-des.git temp-haisa
 
 # 复制核心 SDK
 cp -r temp-haisa/haisa-sdk/ haisa-sdk/

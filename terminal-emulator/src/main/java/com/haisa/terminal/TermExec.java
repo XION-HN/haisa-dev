@@ -19,10 +19,10 @@ import java.util.*;
 public class TermExec {
     // Warning: bump the library revision, when an incompatible change happens
     static {
-        System.loadLibrary("jackpal-termexec2");
+        System.loadLibrary("haisa-termexec");
     }
 
-    public static final String SERVICE_ACTION_V1 = "jackpal.androidterm.action.START_TERM.v1";
+    public static final String SERVICE_ACTION_V1 = "com.haisa.terminal.action.START_TERM.v1";
 
     private static Field descriptorField;
 

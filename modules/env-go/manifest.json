@@ -1,0 +1,31 @@
+{
+  "module_id": "env-go",
+  "package_id": "env-go-1.21.6-aarch64",
+  "version": "1.21.6",
+  "arch": "aarch64",
+  "description": "Go 1.21 toolchain with module support",
+  "min_base_version": "1.0.0",
+  "dependencies": ["env-base"],
+  "entry_binaries": {
+    "go": "bin/go",
+    "gofmt": "bin/gofmt",
+    "goimports": "bin/goimports",
+    "gopls": "bin/gopls"
+  },
+  "env_vars": {
+    "GOROOT": "{{install_dir}}",
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "GOPATH": "{{install_dir}}/gopath",
+    "GOMODCACHE": "{{install_dir}}/gopath/pkg/mod",
+    "GOOS": "android",
+    "GOARCH": "arm64"
+  },
+  "install_size_mb": 200,
+  "ide_integrations": [
+    {
+      "ide_type": "haisa-ide",
+      "tasks": ["go-build", "go-run", "go-test", "go-mod-tidy", "go-mod-download", "go-fmt", "go-vet"]
+    }
+  ]
+}

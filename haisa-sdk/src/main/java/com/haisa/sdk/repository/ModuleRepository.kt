@@ -1,6 +1,5 @@
 package com.haisa.sdk.repository
 
-import android.util.Log
 import com.haisa.sdk.model.InstallProgress
 import com.haisa.sdk.model.InstallStatus
 import com.haisa.sdk.model.InstalledModule
@@ -148,7 +147,7 @@ class ModuleRepositoryImpl(
 
             emit(InstallProgress(moduleId, InstallStatus.FINISHED, 100))
         } catch (e: Exception) {
-            Log.e(TAG, "Install failed for $moduleId", e)
+            System.err.println("$TAG: Install failed for $moduleId - ${e.message}")
             installDir.deleteRecursively()
             cacheFile.delete()
             emit(InstallProgress(moduleId, InstallStatus.ERROR, 0,
@@ -213,47 +212,88 @@ class ModuleRepositoryImpl(
     }
 
     private fun downloadFile(url: String, destFile: File, onProgress: (Long) -> Unit) {
-        val request = Request.Builder().url(url).build()
-        val response = httpClient.newCall(request).execute()
+        val maxRetries = 3
+        var lastException: Exception? = null
 
-        if (!response.isSuccessful) {
-            throw Exception("Download failed: HTTP ${response.code}")
-        }
+        for (attempt in 1..maxRetries) {
+            var response: okhttp3.Response? = null
+            try {
+                val request = Request.Builder().url(url).build()
+                response = httpClient.newCall(request).execute()
 
-        val body = response.body ?: throw Exception("Empty response body")
-        val inputStream = body.byteStream()
-        val outputStream = FileOutputStream(destFile)
-
-        val buffer = ByteArray(8192)
-        var bytesRead: Int
-        var totalBytesRead = 0L
-
-        inputStream.use { input ->
-            outputStream.use { output ->
-                while (input.read(buffer).also { bytesRead = it } != -1) {
-                    output.write(buffer, 0, bytesRead)
-                    totalBytesRead += bytesRead
-                    onProgress(totalBytesRead)
+                if (!response.isSuccessful) {
+                    throw Exception("Download failed: HTTP ${response.code}")
                 }
+
+                val body = response.body ?: throw Exception("Empty response body")
+                body.byteStream().use { input ->
+                    FileOutputStream(destFile).use { output ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
+                        var totalBytesRead = 0L
+
+                        while (input.read(buffer).also { bytesRead = it } != -1) {
+                            output.write(buffer, 0, bytesRead)
+                            totalBytesRead += bytesRead
+                            onProgress(totalBytesRead)
+                        }
+                    }
+                }
+                return
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt < maxRetries) {
+                    Thread.sleep((attempt * 1000).toLong())
+                }
+            } finally {
+                response?.close()
             }
         }
 
-        response.close()
+        throw lastException ?: Exception("Download failed after $maxRetries attempts")
     }
 
     private fun extractArchive(archiveFile: File, targetDir: File) {
+        val canonicalTargetDir = targetDir.canonicalPath
+        val maxEntrySize = 256L * 1024 * 1024
+
         ZipInputStream(FileInputStream(archiveFile)).use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
                 val entryFile = File(targetDir, entry.name)
+                val canonicalEntryPath = entryFile.canonicalPath
+
+                if (!canonicalEntryPath.startsWith(canonicalTargetDir)) {
+                    zis.closeEntry()
+                    entry = zis.nextEntry
+                    continue
+                }
+
+                if (entry.name.contains("..")) {
+                    zis.closeEntry()
+                    entry = zis.nextEntry
+                    continue
+                }
+
+                if (entry.size > maxEntrySize) {
+                    zis.closeEntry()
+                    entry = zis.nextEntry
+                    continue
+                }
+
                 if (entry.isDirectory) {
-                    entryFile.mkdirs()
+                    if (!entry.name.startsWith("/") && !entry.name.contains("..")) {
+                        entryFile.mkdirs()
+                    }
                 } else {
                     entryFile.parentFile?.mkdirs()
                     FileOutputStream(entryFile).use { fos ->
                         val buffer = ByteArray(8192)
                         var len: Int
+                        var totalRead = 0L
                         while (zis.read(buffer).also { len = it } > 0) {
+                            totalRead += len
+                            if (totalRead > maxEntrySize) break
                             fos.write(buffer, 0, len)
                         }
                     }
@@ -269,7 +309,7 @@ class ModuleRepositoryImpl(
         if (cached != null && cached.downloadUrl.isNotEmpty()) {
             return cached.downloadUrl
         }
-        return "https://github.com/XION-HN/haisa-dev/releases/download/${moduleId}-v${version}/${moduleId}-${version}-aarch64.zip"
+        return "https://github.com/XION-HN/haisa-des/releases/download/${moduleId}-v${version}/${moduleId}-${version}-aarch64.zip"
     }
 
     private suspend fun resolveLatestVersion(moduleId: String): String? {

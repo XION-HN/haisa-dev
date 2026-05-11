@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentLinkedQueue
 
 data class BuildTask(
@@ -18,7 +20,7 @@ data class BuildTask(
     val buildCommand: String,
     val moduleIds: List<String> = emptyList(),
     val priority: Int = 0,
-    var status: BuildTaskStatus = BuildTaskStatus.QUEUED
+    @Volatile var status: BuildTaskStatus = BuildTaskStatus.QUEUED
 )
 
 enum class BuildTaskStatus {
@@ -42,6 +44,8 @@ class BuildTaskQueue(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val queue = ConcurrentLinkedQueue<BuildTask>()
     private val results = mutableMapOf<String, BuildTaskResult>()
+    private val processingMutex = Mutex()
+    @Volatile private var activeCount = 0
 
     private val _queueState = MutableStateFlow(BuildQueueState())
     val queueState: StateFlow<BuildQueueState> = _queueState.asStateFlow()
@@ -49,6 +53,7 @@ class BuildTaskQueue(
     data class BuildQueueState(
         val pendingCount: Int = 0,
         val activeTask: BuildTask? = null,
+        val activeCount: Int = 0,
         val completedCount: Int = 0,
         val failedCount: Int = 0
     )
@@ -66,54 +71,75 @@ class BuildTaskQueue(
         updateState()
     }
 
-    fun getResults(): Map<String, BuildTaskResult> = results.toMap()
+    fun getResults(): Map<String, BuildTaskResult> = synchronized(results) { results.toMap() }
 
     fun clear() {
         queue.clear()
-        results.clear()
+        synchronized(results) { results.clear() }
         updateState()
     }
 
     private fun processNext() {
-        if (_queueState.value.activeTask != null) return
-
-        val task = queue.poll() ?: return
-        task.status = BuildTaskStatus.RUNNING
-        updateState()
-
         scope.launch {
-            try {
-                val outputLines = mutableListOf<String>()
-                buildEngine.execute(task.projectPath, task.buildCommand).collect { progress ->
-                    outputLines.add(progress.message)
-                    if (progress.status == BuildStatus.FAILED) {
+            processingMutex.withLock {
+                if (activeCount >= maxConcurrent) return@launch
+                val task = queue.poll() ?: return@launch
+                activeCount++
+                task.status = BuildTaskStatus.RUNNING
+                updateState()
+
+                launch {
+                    try {
+                        val outputLines = mutableListOf<String>()
+                        buildEngine.execute(task.projectPath, task.buildCommand).collect { progress ->
+                            outputLines.add(progress.message)
+                            if (progress.status == BuildStatus.FAILED) {
+                                task.status = BuildTaskStatus.FAILED
+                                synchronized(results) {
+                                    results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.FAILED, outputLines)
+                                }
+                            } else if (progress.status == BuildStatus.FINISHED) {
+                                task.status = BuildTaskStatus.COMPLETED
+                                synchronized(results) {
+                                    results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.COMPLETED, outputLines)
+                                }
+                            }
+                        }
+                        if (task.status != BuildTaskStatus.FAILED) {
+                            task.status = BuildTaskStatus.COMPLETED
+                            synchronized(results) {
+                                results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.COMPLETED,
+                                    results[task.id]?.output ?: emptyList())
+                            }
+                        }
+                    } catch (e: Exception) {
                         task.status = BuildTaskStatus.FAILED
-                        results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.FAILED, outputLines)
-                    } else if (progress.status == BuildStatus.FINISHED) {
-                        task.status = BuildTaskStatus.COMPLETED
-                        results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.COMPLETED, outputLines)
+                        synchronized(results) {
+                            results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.FAILED, listOf(e.message ?: "Unknown error"))
+                        }
+                    } finally {
+                        activeCount--
+                        updateState()
+                        processNext()
                     }
                 }
-                if (task.status != BuildTaskStatus.FAILED) {
-                    task.status = BuildTaskStatus.COMPLETED
-                    results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.COMPLETED,
-                        results[task.id]?.output ?: emptyList())
-                }
-            } catch (e: Exception) {
-                task.status = BuildTaskStatus.FAILED
-                results[task.id] = BuildTaskResult(task.id, BuildTaskStatus.FAILED, listOf(e.message ?: "Unknown error"))
             }
-            updateState()
-            processNext()
         }
     }
 
     private fun updateState() {
+        val completedCount: Int
+        val failedCount: Int
+        synchronized(results) {
+            completedCount = results.count { it.value.status == BuildTaskStatus.COMPLETED }
+            failedCount = results.count { it.value.status == BuildTaskStatus.FAILED }
+        }
         _queueState.value = BuildQueueState(
             pendingCount = queue.size,
             activeTask = _queueState.value.activeTask?.takeIf { it.status == BuildTaskStatus.RUNNING },
-            completedCount = results.count { it.value.status == BuildTaskStatus.COMPLETED },
-            failedCount = results.count { it.value.status == BuildTaskStatus.FAILED }
+            activeCount = activeCount,
+            completedCount = completedCount,
+            failedCount = failedCount
         )
     }
 }

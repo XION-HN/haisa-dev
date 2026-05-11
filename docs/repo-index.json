@@ -1,7 +1,302 @@
 {
-  "version": "1.0.0",
-  "last_updated": "2026-05-10T09:08:49Z",
-  "base_url": "https://github.com/XION-HN/haisa-dev/releases/download",
+  "version": "2.0",
+  "last_updated": "2026-05-11T00:00:00Z",
+  "base_url": "https://github.com/XION-HN/haisa-des/releases/download",
+  "packages": [
+    {
+      "pkg_id": "env-base",
+      "name": "Core Runtime",
+      "version": "1.0.0",
+      "arch": "aarch64",
+      "description": "Core runtime libraries and base tools (sh, busybox, libc)",
+      "maintainer": "Haisa Des Team",
+      "section": "base",
+      "priority": "required",
+      "depends": [],
+      "provides": ["sh", "busybox", "libc"],
+      "conflicts": [],
+      "entry_binaries": {
+        "sh": "bin/sh",
+        "busybox": "bin/busybox"
+      },
+      "env_vars": {
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "HOME": "{{install_dir}}/home",
+        "TERM": "xterm-256color",
+        "LANG": "en_US.UTF-8",
+        "TMPDIR": "{{install_dir}}/tmp"
+      },
+      "install_size_kb": 5120,
+      "sha256": "",
+      "download_url": "",
+      "license": "MIT",
+      "homepage": "https://github.com/XION-HN/haisa-des"
+    },
+    {
+      "pkg_id": "env-cc",
+      "name": "C/C++ Toolchain",
+      "version": "17.0.1",
+      "arch": "aarch64",
+      "description": "Clang/LLVM toolchain for C/C++ development",
+      "maintainer": "Haisa Des Team",
+      "section": "dev",
+      "priority": "optional",
+      "depends": ["env-base"],
+      "provides": ["clang", "llvm", "lld"],
+      "conflicts": [],
+      "entry_binaries": {
+        "clang": "bin/clang",
+        "clang++": "bin/clang++",
+        "lld": "bin/lld",
+        "ar": "bin/llvm-ar",
+        "nm": "bin/llvm-nm",
+        "objdump": "bin/llvm-objdump",
+        "strip": "bin/llvm-strip"
+      },
+      "env_vars": {
+        "CC": "{{install_dir}}/bin/clang",
+        "CXX": "{{install_dir}}/bin/clang++",
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "CPATH": "{{install_dir}}/include",
+        "LIBRARY_PATH": "{{install_dir}}/lib"
+      },
+      "install_size_kb": 81920,
+      "sha256": "",
+      "download_url": "",
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/XION-HN/haisa-des",
+      "ide_integrations": [
+        {
+          "ide_type": "haisa-ide",
+          "tasks": ["c-compile", "c++-compile", "cmake-build", "make-build"]
+        }
+      ]
+    },
+    {
+      "pkg_id": "env-git",
+      "name": "Git",
+      "version": "2.43.0",
+      "arch": "aarch64",
+      "description": "Git version control system",
+      "maintainer": "Haisa Des Team",
+      "section": "vcs",
+      "priority": "optional",
+      "depends": ["env-base"],
+      "provides": ["git"],
+      "conflicts": [],
+      "entry_binaries": {
+        "git": "bin/git"
+      },
+      "env_vars": {
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "GIT_EXEC_PATH": "{{install_dir}}/libexec/git-core",
+        "GIT_TEMPLATE_DIR": "{{install_dir}}/share/git-core/templates"
+      },
+      "install_size_kb": 10240,
+      "sha256": "",
+      "download_url": "",
+      "license": "GPL-2.0-only",
+      "homepage": "https://github.com/XION-HN/haisa-des",
+      "ide_integrations": [
+        {
+          "ide_type": "haisa-ide",
+          "tasks": ["git-init", "git-clone", "git-commit", "git-push", "git-pull", "git-status"]
+        }
+      ]
+    },
+    {
+      "pkg_id": "env-jdk",
+      "name": "Java JDK",
+      "version": "17.0.8",
+      "arch": "aarch64",
+      "description": "OpenJDK 17 for Java and Android development",
+      "maintainer": "Haisa Des Team",
+      "section": "dev",
+      "priority": "optional",
+      "depends": ["env-base"],
+      "provides": ["java", "javac", "jdk-17"],
+      "conflicts": [],
+      "entry_binaries": {
+        "java": "bin/java",
+        "javac": "bin/javac",
+        "jar": "bin/jar",
+        "javadoc": "bin/javadoc",
+        "jdb": "bin/jdb"
+      },
+      "env_vars": {
+        "JAVA_HOME": "{{install_dir}}",
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "CLASSPATH": "{{install_dir}}/lib/tools.jar:{{install_dir}}/lib/dt.jar"
+      },
+      "install_size_kb": 184320,
+      "sha256": "",
+      "download_url": "",
+      "license": "GPL-2.0-with-classpath-exception",
+      "homepage": "https://github.com/XION-HN/haisa-des",
+      "ide_integrations": [
+        {
+          "ide_type": "haisa-ide",
+          "tasks": ["java-compile", "java-run", "java-debug", "javadoc"]
+        }
+      ]
+    },
+    {
+      "pkg_id": "env-node",
+      "name": "Node.js",
+      "version": "20.11.0",
+      "arch": "aarch64",
+      "description": "Node.js 20 LTS runtime with npm and npx",
+      "maintainer": "Haisa Des Team",
+      "section": "dev",
+      "priority": "optional",
+      "depends": ["env-base"],
+      "provides": ["node", "npm", "npx", "node-20"],
+      "conflicts": [],
+      "entry_binaries": {
+        "node": "bin/node",
+        "npm": "bin/npm",
+        "npx": "bin/npx"
+      },
+      "env_vars": {
+        "NODE_HOME": "{{install_dir}}",
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "NPM_CONFIG_CACHE": "{{install_dir}}/cache/npm",
+        "NPM_CONFIG_PREFIX": "{{install_dir}}"
+      },
+      "install_size_kb": 35840,
+      "sha256": "",
+      "download_url": "",
+      "license": "MIT",
+      "homepage": "https://github.com/XION-HN/haisa-des",
+      "ide_integrations": [
+        {
+          "ide_type": "haisa-ide",
+          "tasks": ["node-run", "npm-install", "npm-run-script", "npm-test"]
+        }
+      ]
+    },
+    {
+      "pkg_id": "env-python",
+      "name": "Python 3",
+      "version": "3.11.8",
+      "arch": "aarch64",
+      "description": "Python 3.11 runtime with pip package manager",
+      "maintainer": "Haisa Des Team",
+      "section": "dev",
+      "priority": "optional",
+      "depends": ["env-base"],
+      "provides": ["python3", "pip3", "python-3"],
+      "conflicts": [],
+      "entry_binaries": {
+        "python3": "bin/python3",
+        "python": "bin/python3",
+        "pip3": "bin/pip3",
+        "pip": "bin/pip3"
+      },
+      "env_vars": {
+        "PYTHON_HOME": "{{install_dir}}",
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "PYTHONPATH": "{{install_dir}}/lib/python3.11/site-packages",
+        "PIP_CACHE_DIR": "{{install_dir}}/cache/pip"
+      },
+      "install_size_kb": 40960,
+      "sha256": "",
+      "download_url": "",
+      "license": "PSF-2.0",
+      "homepage": "https://github.com/XION-HN/haisa-des",
+      "ide_integrations": [
+        {
+          "ide_type": "haisa-ide",
+          "tasks": ["python-run", "pip-install", "pip-freeze", "venv-create"]
+        }
+      ]
+    },
+    {
+      "pkg_id": "env-rust",
+      "name": "Rust",
+      "version": "1.75.0",
+      "arch": "aarch64",
+      "description": "Rust 1.75 toolchain with cargo build system",
+      "maintainer": "Haisa Des Team",
+      "section": "dev",
+      "priority": "optional",
+      "depends": ["env-base"],
+      "provides": ["rustc", "cargo", "rust-1"],
+      "conflicts": [],
+      "entry_binaries": {
+        "rustc": "bin/rustc",
+        "cargo": "bin/cargo",
+        "rustfmt": "bin/rustfmt",
+        "clippy-driver": "bin/clippy-driver",
+        "rustdoc": "bin/rustdoc"
+      },
+      "env_vars": {
+        "RUST_HOME": "{{install_dir}}",
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "RUSTUP_HOME": "{{install_dir}}",
+        "CARGO_HOME": "{{install_dir}}",
+        "RUST_SRC_PATH": "{{install_dir}}/lib/rustlib/src/rust/src",
+        "CARGO_BUILD_TARGET": "aarch64-linux-android"
+      },
+      "install_size_kb": 256000,
+      "sha256": "",
+      "download_url": "",
+      "license": "MIT",
+      "homepage": "https://github.com/XION-HN/haisa-des",
+      "ide_integrations": [
+        {
+          "ide_type": "haisa-ide",
+          "tasks": ["cargo-build", "cargo-run", "cargo-test", "cargo-doc", "cargo-fmt", "cargo-clippy"]
+        }
+      ]
+    },
+    {
+      "pkg_id": "env-go",
+      "name": "Go",
+      "version": "1.21.6",
+      "arch": "aarch64",
+      "description": "Go 1.21 toolchain with module support",
+      "maintainer": "Haisa Des Team",
+      "section": "dev",
+      "priority": "optional",
+      "depends": ["env-base"],
+      "provides": ["go", "gopls", "go-1"],
+      "conflicts": [],
+      "entry_binaries": {
+        "go": "bin/go",
+        "gofmt": "bin/gofmt",
+        "goimports": "bin/goimports",
+        "gopls": "bin/gopls"
+      },
+      "env_vars": {
+        "GOROOT": "{{install_dir}}",
+        "PATH": "{{install_dir}}/bin:{{old_path}}",
+        "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+        "GOPATH": "{{install_dir}}/gopath",
+        "GOMODCACHE": "{{install_dir}}/gopath/pkg/mod",
+        "GOOS": "android",
+        "GOARCH": "arm64"
+      },
+      "install_size_kb": 204800,
+      "sha256": "",
+      "download_url": "",
+      "license": "BSD-3-Clause",
+      "homepage": "https://github.com/XION-HN/haisa-des",
+      "ide_integrations": [
+        {
+          "ide_type": "haisa-ide",
+          "tasks": ["go-build", "go-run", "go-test", "go-mod-tidy", "go-mod-download", "go-fmt", "go-vet"]
+        }
+      ]
+    }
+  ],
   "modules": [
     {
       "id": "env-base",
@@ -17,9 +312,7 @@
       "description": "Clang/LLVM toolchain for C/C++ development",
       "latest": "17.0.1",
       "size_mb": 80,
-      "dependencies": [
-        "env-base"
-      ]
+      "dependencies": ["env-base"]
     },
     {
       "id": "env-git",
@@ -27,9 +320,7 @@
       "description": "Git version control system",
       "latest": "2.43.0",
       "size_mb": 10,
-      "dependencies": [
-        "env-base"
-      ]
+      "dependencies": ["env-base"]
     },
     {
       "id": "env-jdk",
@@ -37,9 +328,7 @@
       "description": "OpenJDK 17 for Java and Android development",
       "latest": "17.0.8",
       "size_mb": 180,
-      "dependencies": [
-        "env-base"
-      ]
+      "dependencies": ["env-base"]
     },
     {
       "id": "env-node",
@@ -47,9 +336,7 @@
       "description": "Node.js 20 LTS runtime with npm and npx",
       "latest": "20.11.0",
       "size_mb": 35,
-      "dependencies": [
-        "env-base"
-      ]
+      "dependencies": ["env-base"]
     },
     {
       "id": "env-python",
@@ -57,9 +344,23 @@
       "description": "Python 3.11 runtime with pip package manager",
       "latest": "3.11.8",
       "size_mb": 40,
-      "dependencies": [
-        "env-base"
-      ]
+      "dependencies": ["env-base"]
+    },
+    {
+      "id": "env-rust",
+      "name": "Rust",
+      "description": "Rust 1.75 toolchain with cargo build system",
+      "latest": "1.75.0",
+      "size_mb": 250,
+      "dependencies": ["env-base"]
+    },
+    {
+      "id": "env-go",
+      "name": "Go",
+      "description": "Go 1.21 toolchain with module support",
+      "latest": "1.21.6",
+      "size_mb": 200,
+      "dependencies": ["env-base"]
     }
   ]
 }

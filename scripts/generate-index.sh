@@ -62,7 +62,7 @@ if [ "$MODULES_JSON" = "[]" ]; then
 {
   "version": "1.0.0",
   "last_updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "base_url": "https://github.com/XION-HN/haisa-dev/releases/download",
+  "base_url": "https://github.com/XION-HN/haisa-des/releases/download",
   "modules": [
     {
       "id": "env-base",
@@ -121,7 +121,7 @@ import json
 index = {
     'version': '1.0.0',
     'last_updated': '$(date -u +%Y-%m-%dT%H:%M:%SZ)',
-    'base_url': 'https://github.com/XION-HN/haisa-dev/releases/download',
+    'base_url': 'https://github.com/XION-HN/haisa-des/releases/download',
     'modules': json.loads('''$MODULES_JSON''')
 }
 print(json.dumps(index, indent=2))

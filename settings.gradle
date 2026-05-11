@@ -1,4 +1,4 @@
-rootProject.name = "HaisaDev"
+rootProject.name = "HaisaDes"
 include ':app'
 include ':haisa-sdk'
 include ':terminal-emulator'

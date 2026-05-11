@@ -1,4 +1,4 @@
-package com.haisa.dev
+package com.haisa.des
 
 import android.os.ParcelFileDescriptor
 import java.io.File
@@ -12,16 +12,24 @@ import java.io.RandomAccessFile
 object ParcelFileDescriptorCompat {
 
     fun openPtmx(): ParcelFileDescriptor? {
+        var raf: RandomAccessFile? = null
         return try {
-            val ptmx = RandomAccessFile("/dev/ptmx", "rw")
-            val fd = ptmx.fd
+            raf = RandomAccessFile("/dev/ptmx", "rw")
+            val fd = raf.fd
             val intFd = getFileDescriptorInt(fd)
+            if (intFd < 0) {
+                raf.close()
+                return null
+            }
             val pfd = ParcelFileDescriptor.adoptFd(intFd)
             val ptsName = getPtsName(fd)
             grantAccess(ptsName)
+            raf = null
             pfd
         } catch (e: Exception) {
             null
+        } finally {
+            try { raf?.close() } catch (_: Exception) {}
         }
     }
 

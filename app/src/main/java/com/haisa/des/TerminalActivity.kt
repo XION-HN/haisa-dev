@@ -1,4 +1,4 @@
-package com.haisa.dev
+package com.haisa.des
 
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -19,7 +19,8 @@ class TerminalActivity : AppCompatActivity() {
     private var termSession: TermSession? = null
     private var emulatorView: EmulatorView? = null
     private var termExec: TermExec? = null
-    private var processId: Int = -1
+    @Volatile private var processId: Int = -1
+    private var pfd: ParcelFileDescriptor? = null
 
     companion object {
         const val EXTRA_MODULE_IDS = "module_ids"
@@ -64,22 +65,23 @@ class TerminalActivity : AppCompatActivity() {
             if (parts.size == 2) parts[0] to parts[1] else entry to ""
         })
 
-        val pfd = ParcelFileDescriptorCompat.openPtmx()
-        if (pfd == null) {
+        val pfdLocal = ParcelFileDescriptorCompat.openPtmx()
+        if (pfdLocal == null) {
             finish()
             return
         }
+        pfd = pfdLocal
 
         Thread {
             try {
-                processId = exec.start(pfd)
+                processId = exec.start(pfdLocal)
             } catch (e: Exception) {
                 runOnUiThread { finish() }
             }
         }.start()
 
-        val inputStream = ParcelFileDescriptorCompat.getInputStream(pfd)
-        val outputStream = ParcelFileDescriptorCompat.getOutputStream(pfd)
+        val inputStream = ParcelFileDescriptorCompat.getInputStream(pfdLocal)
+        val outputStream = ParcelFileDescriptorCompat.getOutputStream(pfdLocal)
 
         session.setTermIn(inputStream)
         session.setTermOut(outputStream)
@@ -129,6 +131,10 @@ class TerminalActivity : AppCompatActivity() {
             TermExec.sendSignal(processId, 9)
         }
         termSession?.finish()
+        try {
+            pfd?.close()
+        } catch (_: Exception) {}
+        pfd = null
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

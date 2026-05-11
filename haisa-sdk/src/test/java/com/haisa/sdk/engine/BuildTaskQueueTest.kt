@@ -1,5 +1,6 @@
 package com.haisa.sdk.engine
 
+import kotlinx.coroutines.sync.Mutex
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.UUID
@@ -19,6 +20,7 @@ class BuildTaskQueueTest {
         assertEquals(task.id, taskId)
         val state = queue.queueState.value
         assertTrue(state.pendingCount >= 0 || state.activeTask != null)
+        assertTrue(state.activeCount >= 0)
     }
 
     @Test
@@ -37,6 +39,8 @@ class BuildTaskQueueTest {
 
         val result = queue.getResults()[taskId]
         assertNotNull(result)
+        val state = queue.queueState.value
+        assertTrue(state.activeCount >= 0)
         assertEquals(BuildTaskStatus.CANCELLED, result!!.status)
     }
 
@@ -54,6 +58,7 @@ class BuildTaskQueueTest {
         queue.clear()
         val state = queue.queueState.value
         assertEquals(0, state.pendingCount)
+        assertEquals(0, state.activeCount)
         assertTrue(queue.getResults().isEmpty())
     }
 

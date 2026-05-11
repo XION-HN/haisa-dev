@@ -1,4 +1,4 @@
-name: Build & Test Haisa Dev
+name: Build & Test Haisa Des
 
 on:
   push:
@@ -118,7 +118,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        name: Haisa Dev v${{ steps.version.outputs.VERSION }}
+        name: Haisa Des v${{ steps.version.outputs.VERSION }}
         body_path: CHANGELOG.md
         draft: false
         prerelease: false

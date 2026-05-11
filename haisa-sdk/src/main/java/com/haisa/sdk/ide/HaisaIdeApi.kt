@@ -25,13 +25,19 @@ interface HaisaIdeApi {
         moduleIds: List<String> = emptyList()
     ): Flow<BuildProgress>
 
-    fun createProject(
+    suspend fun createProject(
         projectName: String,
         template: ProjectTemplate,
         outputDir: String
     ): Result<ProjectConfig>
 
     fun openTerminal(moduleIds: List<String>): TerminalSession
+
+    fun getLanguageSdk(languageId: String): LanguageSdkInfo?
+
+    fun getLanguageSdks(): List<LanguageSdkInfo>
+
+    fun resolveCompletionContext(filePath: String, moduleIds: List<String>): CompletionContext
 
     interface TerminalSession {
         val moduleId: String?
@@ -40,6 +46,25 @@ interface HaisaIdeApi {
         fun readOutput(): String
         fun close()
     }
+
+    data class LanguageSdkInfo(
+        val languageId: String,
+        val packageName: String,
+        val version: String,
+        val homeDir: String,
+        val binaryPaths: Map<String, String>,
+        val includePaths: List<String>,
+        val libraryPaths: List<String>,
+        val envVars: Map<String, String>,
+        val ideTasks: List<String>
+    )
+
+    data class CompletionContext(
+        val languageId: String,
+        val sdkInfo: LanguageSdkInfo?,
+        val additionalIncludePaths: List<String>,
+        val environment: Map<String, String>
+    )
 
     interface ProjectListener {
         fun onProjectCreated(config: ProjectConfig) {}

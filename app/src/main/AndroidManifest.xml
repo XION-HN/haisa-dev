@@ -8,26 +8,13 @@
     <application
         android:name=".HaisaApp"
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="Haisa Dev"
-        android:theme="@style/Theme.HaisaDev"
+        android:label="Haisa Des"
         android:usesCleartextTraffic="true">
-
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:label="Haisa Dev">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
 
         <activity
             android:name=".TerminalActivity"
             android:exported="false"
-            android:label="Terminal"
-            android:theme="@style/Theme.HaisaDev" />
+            android:label="Terminal" />
 
     </application>
 

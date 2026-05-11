@@ -6,7 +6,7 @@ import com.haisa.sdk.model.ProjectTemplate
 
 class ProjectController(private val haisa: HaisaEnvironment) {
 
-    fun createProject(
+    suspend fun createProject(
         projectName: String,
         template: ProjectTemplate,
         outputDir: String

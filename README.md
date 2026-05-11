@@ -1,4 +1,4 @@
-# Haisa Dev Environment
+# Haisa Des Environment
 
 > Android 模块化跨语言开发平台 - 让移动设备成为真正的开发工作站
 
@@ -6,7 +6,7 @@
 
 ## 项目概述
 
-Haisa Dev 是一个基于 **Android-Terminal-Emulator** 构建的模块化开发环境，为 Haisa IDE 系列提供底层运行时支持。采用 **MVC 架构** 设计，支持通过在线模块商店按需下载 C/C++、Java、Python、Node.js 等语言运行环境。
+Haisa Des 是一个基于 **Android-Terminal-Emulator** 构建的模块化开发环境，为 Haisa IDE 系列提供底层运行时支持。采用 **MVC 架构** 设计，支持通过在线模块商店按需下载 C/C++、Java、Python、Node.js 等语言运行环境。
 
 ### 核心特性
 - 🧩 模块化设计：按需下载语言运行时，最小化安装体积
@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.haisa-dev:haisa-dev:latest'
+    implementation 'com.github.haisa-des:haisa-des:latest'
 }
 ```
 
@@ -42,13 +42,13 @@ dependencies {
 ## 项目结构 (MVC 架构)
 
 ```
-haisa-dev/
-├── app/                          # 演示应用 (Demo App)
-│   ├── src/main/
-│   │   ├── java/com/haisa/dev/
-│   │   │   ├── HaisaApp.java     # Application 基类
-│   │   │   ├── MainActivity.kt   # 主界面
-│   │   │   ├── HaisaDevManager.kt       # 开发环境管理器 (Facade)
+haisa-des/
+├── app/ # 演示应用 (Demo App)
+│ ├── src/main/
+│ │ ├── java/com/haisa/des/
+│ │ │ ├── HaisaApp.java # Application 基类
+│ │ │ ├── MainActivity.kt # 主界面
+│ │ │ ├── HaisaDesManager.kt # 开发环境管理器 (Facade)
 │   │   │   ├── model/
 │   │   │   │   ├── ModuleConfig.kt      # 模块配置数据
 │   │   │   │   ├── ModuleRepository.kt  # 模块仓库接口

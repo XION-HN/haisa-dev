@@ -1,0 +1,34 @@
+{
+  "module_id": "env-rust",
+  "package_id": "env-rust-1.75.0-aarch64",
+  "version": "1.75.0",
+  "arch": "aarch64",
+  "description": "Rust 1.75 toolchain with cargo build system",
+  "min_base_version": "1.0.0",
+  "dependencies": ["env-base"],
+  "entry_binaries": {
+    "rustc": "bin/rustc",
+    "cargo": "bin/cargo",
+    "rustfmt": "bin/rustfmt",
+    "clippy-driver": "bin/clippy-driver",
+    "rustdoc": "bin/rustdoc",
+    "rust-gdb": "bin/rust-gdb",
+    "rust-lldb": "bin/rust-lldb"
+  },
+  "env_vars": {
+    "RUST_HOME": "{{install_dir}}",
+    "PATH": "{{install_dir}}/bin:{{old_path}}",
+    "LD_LIBRARY_PATH": "{{install_dir}}/lib",
+    "RUSTUP_HOME": "{{install_dir}}",
+    "CARGO_HOME": "{{install_dir}}",
+    "RUST_SRC_PATH": "{{install_dir}}/lib/rustlib/src/rust/src",
+    "CARGO_BUILD_TARGET": "aarch64-linux-android"
+  },
+  "install_size_mb": 250,
+  "ide_integrations": [
+    {
+      "ide_type": "haisa-ide",
+      "tasks": ["cargo-build", "cargo-run", "cargo-test", "cargo-doc", "cargo-fmt", "cargo-clippy"]
+    }
+  ]
+}

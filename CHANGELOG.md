@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Project Generator**: `HaisaEnvironment.createProject()` now creates actual project scaffolding on disk with template-appropriate files (Python, Node.js, C/C++, Android/Kotlin, Rust, Go)
 - **TerminalActivity**: Complete terminal UI integration with EmulatorView, PTY management via `ParcelFileDescriptorCompat`, module environment injection, and shell process lifecycle management
 - **ParcelFileDescriptorCompat**: Utility for opening PTMX, getting PTS name, and granting access for terminal sessions
-- **Terminal JNI Native Library**: Full C implementation of `jackpal-termexec2` with `createSubprocessInternal`, `waitFor`, and `sendSignal` native methods, plus CMakeLists.txt for NDK build
+- **Terminal JNI Native Library**: Full C implementation of `haisa-termexec` with `createSubprocessInternal`, `waitFor`, and `sendSignal` native methods, plus CMakeLists.txt for NDK build
 - **Module Manifests**: All 6 module manifests now have proper `env_vars` (with `{{install_dir}}`/`{{old_path}}` templates), `dependencies`, `entry_binaries`, `package_id`, and `ide_integrations`
 - **Environment from Manifest**: `getModuleEnvironment()` now reads `manifest.json` and applies `resolveEnvVars()` template substitution instead of hardcoded values
 - **Tests**: BuildEngineTest (4 cases), ModuleRepositoryTest (7 cases)
@@ -73,6 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI/CD**: GitHub Actions workflow
 - **Documentation**: ARCHITECTURE.md, DEVELOPMENT_PLAN.md, INTEGRATION.md, repo-index.json
 
-[1.2.0]: https://github.com/XION-HN/haisa-dev/releases/tag/v1.2.0
-[1.1.0]: https://github.com/XION-HN/haisa-dev/releases/tag/v1.1.0
-[1.0.0]: https://github.com/XION-HN/haisa-dev/releases/tag/v1.0.0
+[1.2.0]: https://github.com/XION-HN/haisa-des/releases/tag/v1.2.0
+[1.1.0]: https://github.com/XION-HN/haisa-des/releases/tag/v1.1.0
+[1.0.0]: https://github.com/XION-HN/haisa-des/releases/tag/v1.0.0
