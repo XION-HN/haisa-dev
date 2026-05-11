@@ -99,8 +99,7 @@ object DependencyResolver {
         if (pkgId in result) return
         result.add(pkgId)
         val pkg = installedPackages[pkgId] ?: return
-        val availablePackages = mutableMapOf<String, PackageInfo>()
-        for (dep in listOf<String>()) {
+        for (dep in pkg.dependencies) {
             val (depId, _) = parseDependency(dep)
             if (depId in installedPackages) {
                 collectTransitiveDeps(depId, installedPackages, result)

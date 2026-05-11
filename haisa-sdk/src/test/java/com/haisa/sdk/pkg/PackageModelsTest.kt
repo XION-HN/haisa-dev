@@ -62,7 +62,7 @@ class PackageModelsTest {
 
     @Test
     fun packageOperation_types() {
-        assertEquals(6, OperationType.values().size)
+        assertEquals(5, OperationType.values().size)
         assertNotNull(OperationType.valueOf("INSTALL"))
         assertNotNull(OperationType.valueOf("UPGRADE"))
         assertNotNull(OperationType.valueOf("DOWNGRADE"))

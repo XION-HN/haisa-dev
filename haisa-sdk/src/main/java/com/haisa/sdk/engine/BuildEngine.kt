@@ -12,27 +12,29 @@ import java.io.File
 import java.io.InputStreamReader
 import java.util.concurrent.TimeUnit
 
-class BuildEngine {
+class BuildEngine(
+    private val allowedPathPrefixes: List<String> = listOf("/data/data/", "/sdcard/", "/storage/")
+) {
 
-companion object {
-private const val TAG = "BuildEngine"
-private const val DEFAULT_TIMEOUT_MINUTES = 30L
-private val DANGEROUS_PATTERNS = listOf(
-";", "&&", "||", "|", "`", "\$", "\${",
-"rm ", "rm -", "mkfs", "dd if=", "> /dev/",
-"chmod 777", "chmod -R", "chown",
-"curl ", "wget ", "nc ", "ncat ",
-"bash -c", "sh -c", "/su ", "su -",
-"mount ", "umount ", "losetup"
-)
+    companion object {
+        private const val TAG = "BuildEngine"
+        private const val DEFAULT_TIMEOUT_MINUTES = 30L
+        private val DANGEROUS_PATTERNS = listOf(
+            ";", "&&", "||", "|", "`", "\$", "\${",
+            "rm ", "rm -", "mkfs", "dd if=", "> /dev/",
+            "chmod 777", "chmod -R", "chown",
+            "curl ", "wget ", "nc ", "ncat ",
+            "bash -c", "sh -c", "/su ", "su -",
+            "mount ", "umount ", "losetup"
+        )
 
-internal var logError: (String, String, Throwable?) -> Unit = { tag, msg, e ->
-val log = if (e != null) "$tag: $msg - ${e.message}" else "$tag: $msg"
-System.err.println(log)
-}
-}
+        internal var logError: (String, String, Throwable?) -> Unit = { tag, msg, e ->
+            val log = if (e != null) "$tag: $msg - ${e.message}" else "$tag: $msg"
+            System.err.println(log)
+        }
+    }
 
-private var timeoutMinutes: Long = DEFAULT_TIMEOUT_MINUTES
+    private var timeoutMinutes: Long = DEFAULT_TIMEOUT_MINUTES
 
 fun setTimeout(minutes: Long) {
 timeoutMinutes = minutes.coerceAtLeast(1)
@@ -59,8 +61,8 @@ emit(BuildProgress(BuildStatus.FAILED, "Project directory not found: $projectPat
 return@flow
 }
 
-val canonicalPath = projectDir.canonicalPath
-if (!canonicalPath.startsWith("/data/data/") && !canonicalPath.startsWith("/sdcard/") && !canonicalPath.startsWith("/storage/")) {
+        val canonicalPath = projectDir.canonicalPath
+        if (!allowedPathPrefixes.any { canonicalPath.startsWith(it) }) {
 emit(BuildProgress(BuildStatus.FAILED, "Project directory not in allowed paths: $canonicalPath", isError = true))
 return@flow
 }

@@ -51,6 +51,7 @@ data class InstalledPackage(
     val installDate: Long = 0L,
     val installSizeKb: Long = 0L,
     val installPath: String = "",
+    val dependencies: List<String> = emptyList(),
     val status: PackageStatus = PackageStatus.INSTALLED,
     val autoInstalled: Boolean = false
 )

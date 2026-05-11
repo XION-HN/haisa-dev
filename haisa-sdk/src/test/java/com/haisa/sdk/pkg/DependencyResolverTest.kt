@@ -135,8 +135,8 @@ class DependencyResolverTest {
     @Test
     fun findOrphans_identifiesAutoInstalledOnly() {
         val installed = mapOf(
-            "env-base" to InstalledPackage(pkgId = "env-base", version = "1.0", installPath = "/tmp/base"),
-            "env-python" to InstalledPackage(pkgId = "env-python", version = "3.11", installPath = "/tmp/python")
+            "env-base" to InstalledPackage(pkgId = "env-base", version = "1.0", installPath = "/tmp/base", dependencies = emptyList()),
+            "env-python" to InstalledPackage(pkgId = "env-python", version = "3.11", installPath = "/tmp/python", dependencies = listOf("env-base"))
         )
         val autoFlags = mapOf(
             "env-base" to true,
@@ -145,15 +145,15 @@ class DependencyResolverTest {
 
         val orphans = DependencyResolver.findOrphans(installed, autoFlags)
 
-        assertTrue(orphans.contains("env-base"))
+        assertFalse(orphans.contains("env-base"))
         assertFalse(orphans.contains("env-python"))
     }
 
     @Test
     fun findOrphans_keepsRequiredDeps() {
         val installed = mapOf(
-            "env-base" to InstalledPackage(pkgId = "env-base", version = "1.0", installPath = "/tmp/base"),
-            "env-python" to InstalledPackage(pkgId = "env-python", version = "3.11", installPath = "/tmp/python")
+            "env-base" to InstalledPackage(pkgId = "env-base", version = "1.0", installPath = "/tmp/base", dependencies = emptyList()),
+            "env-python" to InstalledPackage(pkgId = "env-python", version = "3.11", installPath = "/tmp/python", dependencies = listOf("env-base"))
         )
         val autoFlags = mapOf(
             "env-base" to true,

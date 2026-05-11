@@ -112,14 +112,15 @@ class PackageManager(context: Context) {
                     return@flow
                 }
 
-                val installedPkg = InstalledPackage(
-                    pkgId = depId,
-                    version = depPkg.version,
-                    arch = depPkg.arch,
-                    installDate = System.currentTimeMillis(),
-                    installSizeKb = calculateDirSizeKb(installDir),
-                    installPath = installDir.absolutePath
-                )
+            val installedPkg = InstalledPackage(
+                pkgId = depId,
+                version = depPkg.version,
+                arch = depPkg.arch,
+                installDate = System.currentTimeMillis(),
+                installSizeKb = calculateDirSizeKb(installDir),
+                installPath = installDir.absolutePath,
+                dependencies = depPkg.dependencies
+            )
                 db.saveInstalledPackage(installedPkg)
                 db.savePackageInfo(depId, depPkg)
                 db.setAutoInstalled(depId, isAuto)
