@@ -9,10 +9,8 @@ import com.haisa.sdk.model.ProjectConfig
 import com.haisa.sdk.model.ProjectTemplate
 import com.haisa.sdk.pkg.PackageInfo
 import com.haisa.sdk.pkg.PackageManager
-import com.haisa.sdk.pkg.PackageModels.PackageIndex
 import com.haisa.sdk.network.GitHubReleasesSource
 import com.haisa.sdk.service.NetworkProvider
-import com.haisa.sdk.util.EnvironmentInjector
 import com.haisa.sdk.util.PathResolver
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers

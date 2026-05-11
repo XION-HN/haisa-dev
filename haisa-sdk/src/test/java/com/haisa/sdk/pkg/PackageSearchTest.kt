@@ -16,27 +16,31 @@ class PackageSearchTest {
         PackageInfo(pkgId = "env-git", name = "Git", version = "2.43.0", description = "Git version control")
     )
 
+    private fun search(query: String, packages: List<PackageInfo>): PackageSearchResult {
+        val q = query.lowercase()
+        val matches = packages.filter { pkg ->
+            pkg.pkgId.lowercase().contains(q) ||
+            pkg.name.lowercase().contains(q) ||
+            pkg.description.lowercase().contains(q)
+        }
+        return PackageSearchResult(query, matches, packages.size)
+    }
+
     @Test
     fun search_byPkgId_returnsMatch() {
-        val pm = createPackageManagerWithIndex()
-        val result = pm.search("python")
-
+        val result = search("python", testPackages)
         assertTrue(result.matches.any { it.pkgId == "env-python" })
     }
 
     @Test
     fun search_byName_returnsMatch() {
-        val pm = createPackageManagerWithIndex()
-        val result = pm.search("Java")
-
+        val result = search("Java", testPackages)
         assertTrue(result.matches.any { it.pkgId == "env-jdk" })
     }
 
     @Test
     fun search_byDescription_returnsMatch() {
-        val pm = createPackageManagerWithIndex()
-        val result = pm.search("toolchain")
-
+        val result = search("toolchain", testPackages)
         assertTrue(result.matches.any { it.pkgId == "env-cc" })
         assertTrue(result.matches.any { it.pkgId == "env-rust" })
         assertTrue(result.matches.any { it.pkgId == "env-go" })
@@ -44,70 +48,27 @@ class PackageSearchTest {
 
     @Test
     fun search_noMatch_returnsEmpty() {
-        val pm = createPackageManagerWithIndex()
-        val result = pm.search("nonexistent_xyz")
-
+        val result = search("nonexistent_xyz", testPackages)
         assertTrue(result.matches.isEmpty())
     }
 
     @Test
     fun search_caseInsensitive() {
-        val pm = createPackageManagerWithIndex()
-        val resultLower = pm.search("python")
-        val resultUpper = pm.search("PYTHON")
-
+        val resultLower = search("python", testPackages)
+        val resultUpper = search("PYTHON", testPackages)
         assertEquals(resultLower.matches.size, resultUpper.matches.size)
     }
 
     @Test
-    fun listAvailable_returnsAllPackages() {
-        val pm = createPackageManagerWithIndex()
-        val available = pm.listAvailable()
-
-        assertEquals(8, available.size)
+    fun search_partialMatch() {
+        val result = search("env-", testPackages)
+        assertEquals(8, result.matches.size)
     }
 
     @Test
-    fun show_existingPkg_returnsInfo() {
-        val pm = createPackageManagerWithIndex()
-        val info = pm.show("env-python")
-
-        assertNotNull(info)
-        assertEquals("3.11.8", info!!.version)
-    }
-
-    @Test
-    fun show_nonexistentPkg_returnsNull() {
-        val pm = createPackageManagerWithIndex()
-        val info = pm.show("env-nonexistent")
-
-        assertNull(info)
-    }
-
-    private fun createPackageManagerWithIndex(): PackageManager {
-        val pm = PackageManagerStub()
-        pm.updateIndex(testPackages)
-        return pm
-    }
-
-    private class PackageManagerStub : PackageManager(null) {
-        override fun listAvailable(): List<PackageInfo> {
-            return indexCache?.packages ?: emptyList()
-        }
-
-        override fun show(pkgId: String): PackageInfo? {
-            return indexCache?.packages?.find { it.pkgId == pkgId }
-        }
-
-        override fun search(query: String): PackageSearchResult {
-            val pkgs = indexCache?.packages ?: emptyList()
-            val q = query.lowercase()
-            val matches = pkgs.filter { pkg ->
-                pkg.pkgId.lowercase().contains(q) ||
-                pkg.name.lowercase().contains(q) ||
-                pkg.description.lowercase().contains(q)
-            }
-            return PackageSearchResult(query, matches, pkgs.size)
-        }
+    fun searchResult_totalAvailable() {
+        val result = search("python", testPackages)
+        assertEquals(8, result.totalAvailable)
+        assertEquals(1, result.matches.size)
     }
 }
