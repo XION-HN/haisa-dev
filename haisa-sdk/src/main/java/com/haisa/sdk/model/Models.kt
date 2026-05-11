@@ -50,14 +50,6 @@ data class ModuleInfo(
     val sha256: String = ""
 )
 
-data class InstalledModule(
-    val id: String,
-    val version: String,
-    val installDate: Long,
-    val sizeInBytes: Long,
-    val installPath: String
-)
-
 enum class InstallStatus {
     IDLE,
     DOWNLOADING,

@@ -68,8 +68,7 @@ class HaisaIdeApiTest {
     @Test
     fun createProjectIsSuspendFunction() {
         val method = HaisaIdeApi::class.java.getMethod("createProject", String::class.java, ProjectTemplate::class.java, String::class.java)
-        assertTrue(method.isAnnotationPresent(kotlin.coroutines.Continuation::class.java) ||
-            method.parameterTypes.last() == kotlin.coroutines.Continuation::class.java)
+        assertTrue(method.parameterTypes.lastOrNull() == kotlin.coroutines.Continuation::class.java)
     }
 
     @Test
