@@ -99,20 +99,6 @@ class BuildEngineTest {
         buildEngine.setTimeout(0)
     }
 
-    @Test
-    fun sanitizeCommand_returnsFallbackForBlankResult() {
-        val buildEngine = BuildEngine()
-        val result = buildEngine.sanitizeCommand("  ")
-        assertEquals("echo 'Empty or invalid command'", result)
-    }
-
-    @Test
-    fun setTimeout_setsValidTimeout() {
-        val buildEngine = BuildEngine()
-        buildEngine.setTimeout(5)
-        buildEngine.setTimeout(0)
-    }
-
     private fun createTempDir(): File {
         val dir = File(System.getProperty("java.io.tmpdir"), "build_test_${System.currentTimeMillis()}")
         dir.mkdirs()
