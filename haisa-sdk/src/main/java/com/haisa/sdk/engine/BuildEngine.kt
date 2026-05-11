@@ -78,53 +78,50 @@ val safeCommand = sanitizeCommand(buildCommand)
 
 emit(BuildProgress(BuildStatus.COMPILING, "Executing: $safeCommand"))
 
-var process: Process? = null
-val reader: BufferedReader
-val errorReader: BufferedReader
+        var process: Process? = null
 
-try {
-process = Runtime.getRuntime().exec(
-arrayOf("sh", "-c", safeCommand),
-envArray,
-projectDir
-)
+        try {
+            process = Runtime.getRuntime().exec(
+                arrayOf("sh", "-c", safeCommand),
+                envArray,
+                projectDir
+            )
 
-reader = BufferedReader(InputStreamReader(process.inputStream))
-errorReader = BufferedReader(InputStreamReader(process.errorStream))
+            BufferedReader(InputStreamReader(process.inputStream)).use { r ->
+                var line: String?
+                while (r.readLine().also { line = it } != null) {
+                    emit(BuildProgress(BuildStatus.COMPILING, line ?: ""))
+                }
+            }
 
-reader.use { r ->
-errorReader.use { er ->
-var line: String?
-while (r.readLine().also { line = it } != null) {
-emit(BuildProgress(BuildStatus.COMPILING, line ?: ""))
-}
+            BufferedReader(InputStreamReader(process.errorStream)).use { er ->
+                var line: String?
+                while (er.readLine().also { line = it } != null) {
+                    emit(BuildProgress(BuildStatus.COMPILING, "[ERR] ${line ?: ""}"))
+                }
+            }
 
-while (er.readLine().also { line = it } != null) {
-emit(BuildProgress(BuildStatus.COMPILING, "[ERR] ${line ?: ""}"))
-}
-}
+            val finished = process.waitFor(timeoutMinutes, TimeUnit.MINUTES)
+            if (!finished) {
+                process.destroyForcibly()
+                emit(BuildProgress(BuildStatus.FAILED, "Build timed out after $timeoutMinutes minutes", isError = true))
+                return@flow
+            }
 
-val finished = process.waitFor(timeoutMinutes, TimeUnit.MINUTES)
-if (!finished) {
-process.destroyForcibly()
-emit(BuildProgress(BuildStatus.FAILED, "Build timed out after $timeoutMinutes minutes", isError = true))
-return@flow
-}
+            val exitCode = process.exitValue()
 
-val exitCode = process.exitValue()
-
-if (exitCode == 0) {
-emit(BuildProgress(BuildStatus.TESTING, "Build succeeded, running checks..."))
-emit(BuildProgress(BuildStatus.PACKAGING, "Packaging artifacts..."))
-emit(BuildProgress(BuildStatus.FINISHED, "Build completed successfully (exit code: 0)"))
-} else {
-emit(BuildProgress(BuildStatus.FAILED, "Build failed with exit code: $exitCode", isError = true))
-}
-} catch (e: Exception) {
-logError(TAG, "Build execution failed", e)
-emit(BuildProgress(BuildStatus.FAILED, "Build error: ${e.message}", isError = true))
-} finally {
-process?.destroyForcibly()
-}
+            if (exitCode == 0) {
+                emit(BuildProgress(BuildStatus.TESTING, "Build succeeded, running checks..."))
+                emit(BuildProgress(BuildStatus.PACKAGING, "Packaging artifacts..."))
+                emit(BuildProgress(BuildStatus.FINISHED, "Build completed successfully (exit code: 0)"))
+            } else {
+                emit(BuildProgress(BuildStatus.FAILED, "Build failed with exit code: $exitCode", isError = true))
+            }
+        } catch (e: Exception) {
+            logError(TAG, "Build execution failed", e)
+            emit(BuildProgress(BuildStatus.FAILED, "Build error: ${e.message}", isError = true))
+        } finally {
+            process?.destroyForcibly()
+        }
 }.flowOn(Dispatchers.IO)
 }
