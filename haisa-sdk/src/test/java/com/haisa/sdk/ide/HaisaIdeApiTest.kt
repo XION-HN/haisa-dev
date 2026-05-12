@@ -67,10 +67,12 @@ class HaisaIdeApiTest {
 
     @Test
     fun createProjectIsSuspendFunction() {
-        val methods = HaisaIdeApi::class.java.methods.filter { it.name == "createProject" }
-        assertTrue(methods.isNotEmpty())
-        val method = methods.first()
-        assertTrue(method.parameterTypes.last() == kotlin.coroutines.Continuation::class.java)
+        val hasSuspendCreateProject = HaisaIdeApi::class.java.declaredMethods.any {
+            it.name == "createProject" &&
+            it.parameterTypes.isNotEmpty() &&
+            it.parameterTypes.last() == kotlin.coroutines.Continuation::class.java
+        }
+        assertTrue(hasSuspendCreateProject)
     }
 
     @Test
