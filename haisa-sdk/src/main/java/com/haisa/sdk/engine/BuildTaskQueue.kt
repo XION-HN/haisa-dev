@@ -76,6 +76,7 @@ class BuildTaskQueue(
     fun clear() {
         queue.clear()
         synchronized(results) { results.clear() }
+        activeCount = 0
         updateState()
     }
 

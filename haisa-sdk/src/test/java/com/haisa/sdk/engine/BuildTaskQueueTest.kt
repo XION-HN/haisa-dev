@@ -7,9 +7,11 @@ import java.util.UUID
 
 class BuildTaskQueueTest {
 
+    private val allowedPrefixes = listOf("/data/data/", "/sdcard/", "/storage/", "/tmp/", System.getProperty("java.io.tmpdir"))
+
     @Test
     fun enqueueAddsTaskToQueue() {
-        val queue = BuildTaskQueue()
+        val queue = BuildTaskQueue(BuildEngine(allowedPathPrefixes = allowedPrefixes))
         val task = BuildTask(
             id = UUID.randomUUID().toString(),
             projectPath = "/tmp/test-project",
@@ -25,7 +27,7 @@ class BuildTaskQueueTest {
 
     @Test
     fun cancelRemovesTaskFromQueue() {
-        val queue = BuildTaskQueue()
+        val queue = BuildTaskQueue(BuildEngine(allowedPathPrefixes = allowedPrefixes))
         val taskId = UUID.randomUUID().toString()
         val task = BuildTask(
             id = taskId,
@@ -46,7 +48,7 @@ class BuildTaskQueueTest {
 
     @Test
     fun clearRemovesAllTasks() {
-        val queue = BuildTaskQueue()
+        val queue = BuildTaskQueue(BuildEngine(allowedPathPrefixes = allowedPrefixes))
         repeat(3) {
             queue.enqueue(BuildTask(
                 id = UUID.randomUUID().toString(),
@@ -64,7 +66,7 @@ class BuildTaskQueueTest {
 
     @Test
     fun getResultsReturnsCompletedTasks() {
-        val queue = BuildTaskQueue()
+        val queue = BuildTaskQueue(BuildEngine(allowedPathPrefixes = allowedPrefixes))
         val taskId = "test-task-1"
         queue.enqueue(BuildTask(
             id = taskId,
